@@ -10,9 +10,22 @@
 		7429455A2FFDA25A00EE6D59 /* EqualizerCar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EqualizerCar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		74491E482FFF4A0F00ACA302 /* Exceptions for "EqualizerCar" folder in "EqualizerCar" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 742945592FFDA25A00EE6D59 /* EqualizerCar */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7429455C2FFDA25A00EE6D59 /* EqualizerCar */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				74491E482FFF4A0F00ACA302 /* Exceptions for "EqualizerCar" folder in "EqualizerCar" target */,
+			);
 			path = EqualizerCar;
 			sourceTree = "<group>";
 		};
@@ -32,8 +45,8 @@
 		742945512FFDA25A00EE6D59 = {
 			isa = PBXGroup;
 			children = (
-				7429455C2FFDA25A00EE6D59 /* EqualizerCar */,
 				7429455B2FFDA25A00EE6D59 /* Products */,
+				7429455C2FFDA25A00EE6D59 /* EqualizerCar */,
 			);
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,7 @@
 				DEVELOPMENT_TEAM = ABSPP3N7N8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EqualizerCar/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +302,7 @@
 				DEVELOPMENT_TEAM = ABSPP3N7N8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EqualizerCar/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
