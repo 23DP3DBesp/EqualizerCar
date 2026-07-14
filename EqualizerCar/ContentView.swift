@@ -52,7 +52,8 @@ struct ContentView: View {
     var body: some View {
         TabView {
             NavigationStack {
-                PlayerDashboardView(audioManager: audioManager)
+                GlassPlayerView()
+                    .environmentObject(audioManager)
             }
             .tabItem {
                 Label("Player", systemImage: "play.circle.fill")
@@ -111,7 +112,7 @@ struct ContentView: View {
                 Label("Library", systemImage: "music.note.list")
             }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
         .fileImporter(
             isPresented: $isImporterPresented,
             allowedContentTypes: activeImporter?.allowedContentTypes ?? [.data],

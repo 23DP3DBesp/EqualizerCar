@@ -84,6 +84,8 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
     var bassBoostEnabled: Bool = false
     var trebleBoostEnabled: Bool = false
     var loudnessEnabled: Bool = false
+    var bassBoostIntensity: Float = 8
+    var bassBoostFrequency: Float = 80
     var compressorEnabled: Bool = false
     var compressorThreshold: Float = -18
     var compressorRatio: Float = 3
@@ -108,6 +110,12 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
     var inputGain: Float = 0.82
     var outputGain: Float = 0.90
     var volumeBoost: Float = 1
+    var multibandCompressorEnabled: Bool = false
+        var adaptiveBassBoostEnabled: Bool = false
+    var crossoverEnabled: Bool = false
+    var crossoverFrequency: Float = 80
+    var crossoverMode: CrossoverMode = .subwoofer
+    var subwooferPhaseInverted: Bool = false
 
     private enum CodingKeys: String, CodingKey {
         case bassBoostEnabled
@@ -137,9 +145,19 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         case inputGain
         case outputGain
         case volumeBoost
+        case bassBoostIntensity
+        case bassBoostFrequency
+            case adaptiveBassBoostEnabled
+        case multibandCompressorEnabled
+        case crossoverEnabled
+        case crossoverFrequency
+        case crossoverMode
+        case subwooferPhaseInverted
     }
 
     nonisolated init(
+    bassBoostIntensity: Float = 8,
+    bassBoostFrequency: Float = 80,
         bassBoostEnabled: Bool = false,
         trebleBoostEnabled: Bool = false,
         loudnessEnabled: Bool = false,
@@ -167,7 +185,15 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         inputGain: Float = 0.82,
         outputGain: Float = 0.90,
         volumeBoost: Float = 1
+        ,
+        multibandCompressorEnabled: Bool = false
+        adaptiveBassBoostEnabled: Bool = false
+        crossoverEnabled: Bool = false,
+        crossoverFrequency: Float = 80,
+        crossoverMode: CrossoverMode = .subwoofer
     ) {
+        self.bassBoostIntensity = bassBoostIntensity
+        self.bassBoostFrequency = bassBoostFrequency
         self.bassBoostEnabled = bassBoostEnabled
         self.trebleBoostEnabled = trebleBoostEnabled
         self.loudnessEnabled = loudnessEnabled
@@ -195,11 +221,19 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         self.inputGain = inputGain
         self.outputGain = outputGain
         self.volumeBoost = volumeBoost
+        self.multibandCompressorEnabled = multibandCompressorEnabled
+        self.adaptiveBassBoostEnabled = adaptiveBassBoostEnabled
+        self.crossoverEnabled = crossoverEnabled
+        self.crossoverFrequency = crossoverFrequency
+        self.crossoverMode = crossoverMode
+        self.subwooferPhaseInverted = subwooferPhaseInverted
     }
 
     nonisolated init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         bassBoostEnabled = try container.decodeIfPresent(Bool.self, forKey: .bassBoostEnabled) ?? false
+        bassBoostIntensity = try container.decodeIfPresent(Float.self, forKey: .bassBoostIntensity) ?? 8
+        bassBoostFrequency = try container.decodeIfPresent(Float.self, forKey: .bassBoostFrequency) ?? 80
         trebleBoostEnabled = try container.decodeIfPresent(Bool.self, forKey: .trebleBoostEnabled) ?? false
         loudnessEnabled = try container.decodeIfPresent(Bool.self, forKey: .loudnessEnabled) ?? false
         compressorEnabled = try container.decodeIfPresent(Bool.self, forKey: .compressorEnabled) ?? false
@@ -226,6 +260,12 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         inputGain = try container.decodeIfPresent(Float.self, forKey: .inputGain) ?? 0.82
         outputGain = try container.decodeIfPresent(Float.self, forKey: .outputGain) ?? 0.90
         volumeBoost = try container.decodeIfPresent(Float.self, forKey: .volumeBoost) ?? 1
+        multibandCompressorEnabled = try container.decodeIfPresent(Bool.self, forKey: .multibandCompressorEnabled) ?? false
+            adaptiveBassBoostEnabled = try container.decodeIfPresent(Bool.self, forKey: .adaptiveBassBoostEnabled) ?? false
+            subwooferPhaseInverted = try container.decodeIfPresent(Bool.self, forKey: .subwooferPhaseInverted) ?? false
+            crossoverEnabled = try container.decodeIfPresent(Bool.self, forKey: .crossoverEnabled) ?? false
+            crossoverFrequency = try container.decodeIfPresent(Float.self, forKey: .crossoverFrequency) ?? 80
+            crossoverMode = try container.decodeIfPresent(CrossoverMode.self, forKey: .crossoverMode) ?? .subwoofer
     }
 
     nonisolated func encode(to encoder: Encoder) throws {
@@ -257,5 +297,13 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         try container.encode(inputGain, forKey: .inputGain)
         try container.encode(outputGain, forKey: .outputGain)
         try container.encode(volumeBoost, forKey: .volumeBoost)
+        try container.encode(multibandCompressorEnabled, forKey: .multibandCompressorEnabled)
+        try container.encode(bassBoostIntensity, forKey: .bassBoostIntensity)
+        try container.encode(bassBoostFrequency, forKey: .bassBoostFrequency)
+            try container.encode(adaptiveBassBoostEnabled, forKey: .adaptiveBassBoostEnabled)
+        try container.encode(crossoverEnabled, forKey: .crossoverEnabled)
+        try container.encode(crossoverFrequency, forKey: .crossoverFrequency)
+        try container.encode(crossoverMode, forKey: .crossoverMode)
+        try container.encode(subwooferPhaseInverted, forKey: .subwooferPhaseInverted)
     }
 }

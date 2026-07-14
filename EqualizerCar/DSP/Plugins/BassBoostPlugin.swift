@@ -8,17 +8,34 @@ final class BassBoostPlugin: AudioEffectPlugin {
     var node: AVAudioNode { eqNode }
 
     var isEnabled: Bool = false {
+        didSet { updateGain() }
+    }
+
+    // intensity in dB (0...12)
+    var intensity: Float = 8 {
+        didSet { updateGain() }
+    }
+
+    // frequency for low-shelf (40...150 Hz)
+    var frequency: Float = 80 {
         didSet {
-            eqNode.bands.first?.gain = isEnabled ? 8 : 0
+            if let band = eqNode.bands.first {
+                band.frequency = frequency
+            }
         }
     }
 
     init() {
         if let band = eqNode.bands.first {
             band.filterType = .lowShelf
-            band.frequency = 80
+            band.frequency = frequency
             band.gain = 0
             band.bypass = false
         }
+    }
+
+    private func updateGain() {
+        let gain = isEnabled ? intensity : 0
+        eqNode.bands.first?.gain = gain
     }
 }

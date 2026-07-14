@@ -15,6 +15,22 @@ class AudioEngineManager: ObservableObject {
     @Published var bandGains: [Float] = Array(repeating: 0, count: 5)
 
     @Published var bassBoostEnabled = false { didSet { bassBoostPlugin.isEnabled = bassBoostEnabled } }
+    @Published var bassBoostIntensity: Float = 8 { didSet { bassBoostPlugin.intensity = bassBoostIntensity } }
+    @Published var bassBoostFrequency: Float = 80 { didSet { bassBoostPlugin.frequency = bassBoostFrequency } }
+    @Published var adaptiveBassBoostEnabled: Bool = false {
+        didSet {
+            if adaptiveBassBoostEnabled {
+                startAdaptiveBassTimerIfNeeded()
+            } else {
+                stopAdaptiveBassTimer()
+            }
+        }
+    }
+
+    // internal smoothing state for adaptive bass
+    private var adaptiveTargetGain: Float = 0
+    private var adaptiveCurrentGain: Float = 0
+    private var adaptiveTimer: Timer?
     @Published var trebleBoostEnabled = false { didSet { trebleBoostPlugin.isEnabled = trebleBoostEnabled } }
     @Published var loudnessEnabled = false { didSet { loudnessPlugin.isEnabled = loudnessEnabled } }
 
@@ -31,6 +47,10 @@ class AudioEngineManager: ObservableObject {
     @Published var compressorRatio: Float = 3 { didSet { compressorPlugin.ratio = compressorRatio } }
     @Published var compressorAttack: Float = 0.012 { didSet { compressorPlugin.attack = compressorAttack } }
     @Published var compressorRelease: Float = 0.18 { didSet { compressorPlugin.release = compressorRelease } }
+
+    @Published var multibandCompressorEnabled: Bool = false {
+        didSet { multibandCompressor.isEnabled = multibandCompressorEnabled }
+    }
 
     @Published var limiterEnabled = true { didSet { limiterPlugin.isEnabled = limiterEnabled } }
     @Published var limiterCeiling: Float = -1 { didSet { limiterPlugin.ceiling = limiterCeiling } }
@@ -73,6 +93,14 @@ class AudioEngineManager: ObservableObject {
     @Published var reverbAmount: Float = 0 { didSet { reverbPlugin.amount = reverbAmount } }
     @Published var reverbSize: Float = 0.45 { didSet { reverbPlugin.size = reverbSize } }
     @Published var reverbDamping: Float = 0.35 { didSet { reverbPlugin.damping = reverbDamping } }
+    @Published var crossoverEnabled: Bool = false {
+        didSet { crossoverPlugin.isEnabled = crossoverEnabled }
+    }
+    @Published var crossoverFrequency: Float = 80 { didSet { crossoverPlugin.crossoverFrequency = crossoverFrequency } }
+    @Published var crossoverMode: CrossoverMode = .subwoofer { didSet { crossoverPlugin.mode = crossoverMode } }
+    @Published var subwooferPhaseInverted: Bool = false {
+        didSet { phaseInverterPlugin.isEnabled = subwooferPhaseInverted }
+    }
 
     @Published var currentLevel: Float = 0
     @Published var overloadPeak: Float = 0
@@ -84,6 +112,8 @@ class AudioEngineManager: ObservableObject {
 
     @Published var inputGain: Float = 0.82 { didSet { inputGainNode?.outputVolume = min(max(inputGain, 0), 1.25) } }
     @Published var outputGain: Float = 0.90 { didSet { outputGainNode?.outputVolume = min(max(outputGain, 0), 1.25) } }
+    @Published var stereoBalance: Float = 0 { didSet { updateOutputPan() } } // -1..1 left..right
+    @Published var frontRearFader: Float = 0 { didSet { /* TODO: route to front/rear buses when available */ } }
 
     private let engine = AVAudioEngine()
     private let playerNode = AVAudioPlayerNode()
@@ -91,6 +121,7 @@ class AudioEngineManager: ObservableObject {
 
     private let bassBoostPlugin = BassBoostPlugin()
     private let trebleBoostPlugin = TrebleBoostPlugin()
+    private let crossoverPlugin = CrossoverPlugin()
     private let loudnessPlugin = LoudnessPlugin()
     private let volumeBoostPlugin = VolumeBoostPlugin()
     private let compressorPlugin = CompressorPlugin()
@@ -100,6 +131,9 @@ class AudioEngineManager: ObservableObject {
     private let spatialAudioPlugin = SpatialAudioPlugin()
     private let surroundPlugin = SurroundPlugin()
     private let reverbPlugin = ReverbPlugin()
+    private let multibandCompressor = MultibandCompressorPlugin(engine: engine)
+    private let crossoverPlugin = CrossoverPlugin()
+    private let phaseInverterPlugin = PhaseInverterPlugin()
 
     private var inputGainNode: AVAudioMixerNode?
     private var environmentNode: AVAudioEnvironmentNode?
@@ -110,6 +144,7 @@ class AudioEngineManager: ObservableObject {
     private var progressTimer: Timer?
     private var eightDRotationTimer: Timer?
     private var eightDRotationAngle: Float = 0
+    private var eightDPan: Float = 0
     private var isLevelMeteringActive = false
     private var shouldResumeAfterInterruption = false
     private var notificationObservers: [NSObjectProtocol] = []
@@ -188,23 +223,38 @@ class AudioEngineManager: ObservableObject {
         surroundPlugin.amount = surroundAmount
         reverbPlugin.size = reverbSize
         reverbPlugin.damping = reverbDamping
+        bassBoostPlugin.intensity = bassBoostIntensity
+        bassBoostPlugin.frequency = bassBoostFrequency
+        adaptiveBassBoostEnabled = false
+        // crossover defaults will be configured later if needed
+        crossoverPlugin.crossoverFrequency = 80
+        crossoverPlugin.mode = .subwoofer
+        crossoverPlugin.isEnabled = false
+        phaseInverterPlugin.isEnabled = false
     }
 
     private func setupEngine() {
         configureAudioSession()
         configureEQBands(node: eqNode, frequencies: bandFrequencies)
 
+        // attach multiband nodes so AudioGraphBuilder can include them
+        multibandCompressor.attach(to: engine)
+
         let graph = AudioGraphBuilder.build(
             engine: engine,
             playerNode: playerNode,
             eqNode: eqNode,
             toneAndDynamicsNodes: [
+                    crossoverPlugin.node,
+                    phaseInverterPlugin.node,
                 bassBoostPlugin.node,
                 trebleBoostPlugin.node,
                 loudnessPlugin.node,
                 volumeBoostPlugin.node,
                 compressorPlugin.node,
                 limiterPlugin.node,
+                multibandCompressor.inputNode,
+                multibandCompressor.outputNode,
                 softClipperPlugin.node,
                 stereoWideningPlugin.node,
                 spatialAudioPlugin.node,
@@ -212,6 +262,9 @@ class AudioEngineManager: ObservableObject {
             ],
             reverbNode: reverbPlugin.node
         )
+
+        // finish wiring internal multiband connections (split after limiter, merge before soft clipper)
+        multibandCompressor.connect(input: limiterPlugin.node, to: softClipperPlugin.node)
 
         inputGainNode = graph.inputGainNode
         environmentNode = graph.environmentNode
@@ -422,17 +475,45 @@ class AudioEngineManager: ObservableObject {
 
     func setBandCount(_ count: Int) {
         guard count != bandCount else { return }
-        let wasPlaying = isPlaying
-        engine.pause()
+        guard count > 0 else { return }
 
-        engine.disconnectNodeOutput(eqNode)
-        engine.disconnectNodeInput(eqNode)
-        engine.detach(eqNode)
+        let oldCount = bandCount
+        let oldGains = bandGains
+        let oldFrequencies = bandFrequencies
 
         let newFrequencies = Self.generateFrequencies(count: count)
         let newEQ = AVAudioUnitEQ(numberOfBands: count)
         engine.attach(newEQ)
         configureEQBands(node: newEQ, frequencies: newFrequencies)
+
+        // Interpolate old gains to new band's positions (index-based interpolation)
+        var interpolatedGains = Array(repeating: Float(0), count: count)
+        if oldCount == 1 {
+            interpolatedGains = Array(repeating: oldGains.first ?? 0, count: count)
+        } else {
+            for j in 0..<count {
+                let position = Float(j) * Float(oldCount - 1) / Float(max(count - 1, 1))
+                let low = Int(floor(position))
+                let high = min(low + 1, oldCount - 1)
+                let frac = position - Float(low)
+                let lowVal = (low >= 0 && low < oldGains.count) ? oldGains[low] : 0
+                let highVal = (high >= 0 && high < oldGains.count) ? oldGains[high] : lowVal
+                interpolatedGains[j] = lowVal * (1 - frac) + highVal * frac
+            }
+        }
+
+        // Apply interpolated gains to new EQ bands
+        for (idx, gain) in interpolatedGains.enumerated() {
+            if idx < newEQ.bands.count {
+                newEQ.bands[idx].gain = gain
+            }
+        }
+
+        // Connect newEQ into the existing graph on-the-fly
+        // We try to avoid stopping the engine; perform only the necessary disconnect/connect calls.
+        // Disconnect outputs from the old EQ, attach and connect the new one in its place.
+        engine.disconnectNodeOutput(eqNode)
+        engine.disconnectNodeInput(eqNode)
 
         if let inputGainNode {
             engine.connect(inputGainNode, to: newEQ, format: nil)
@@ -441,13 +522,24 @@ class AudioEngineManager: ObservableObject {
         }
         engine.connect(newEQ, to: bassBoostPlugin.node, format: nil)
 
+        // Swap references
+        let previousEQ = eqNode
         eqNode = newEQ
         bandCount = count
         bandFrequencies = newFrequencies
-        bandGains = Array(repeating: 0, count: count)
+        bandGains = interpolatedGains
 
-        startEngine()
-        if wasPlaying { playerNode.play() }
+        // Detach the previous EQ after short delay to let engine stabilize
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            self.engine.disconnectNodeOutput(previousEQ)
+            self.engine.disconnectNodeInput(previousEQ)
+            self.engine.detach(previousEQ)
+        }
+
+        // Log a sanity check that playerNode remained playing if it was before
+        if isPlaying && !playerNode.isPlaying {
+            print("Warning: playerNode stopped during setBandCount")
+        }
     }
 
     func setBandGain(index: Int, value: Float) {
@@ -462,6 +554,13 @@ class AudioEngineManager: ObservableObject {
 
     func applyEffects(_ effects: PresetEffectSettings) {
         bassBoostEnabled = effects.bassBoostEnabled
+        bassBoostIntensity = effects.bassBoostIntensity
+        bassBoostFrequency = effects.bassBoostFrequency
+        adaptiveBassBoostEnabled = effects.adaptiveBassBoostEnabled
+        crossoverEnabled = effects.crossoverEnabled
+        crossoverFrequency = effects.crossoverFrequency
+        crossoverMode = effects.crossoverMode
+        subwooferPhaseInverted = effects.subwooferPhaseInverted
         trebleBoostEnabled = effects.trebleBoostEnabled
         loudnessEnabled = effects.loudnessEnabled
         compressorEnabled = effects.compressorEnabled
@@ -485,6 +584,7 @@ class AudioEngineManager: ObservableObject {
         inputGain = effects.inputGain
         outputGain = effects.outputGain
         setVolumeBoost(effects.volumeBoost)
+        multibandCompressorEnabled = effects.multibandCompressorEnabled
         reverbAmount = effects.reverbAmount
         reverbSize = effects.reverbSize
         reverbDamping = effects.reverbDamping
@@ -495,7 +595,10 @@ class AudioEngineManager: ObservableObject {
 
     func currentEffectSettings() -> PresetEffectSettings {
         PresetEffectSettings(
+            bassBoostIntensity: bassBoostIntensity,
+            bassBoostFrequency: bassBoostFrequency,
             bassBoostEnabled: bassBoostEnabled,
+            adaptiveBassBoostEnabled: adaptiveBassBoostEnabled,
             trebleBoostEnabled: trebleBoostEnabled,
             loudnessEnabled: loudnessEnabled,
             compressorEnabled: compressorEnabled,
@@ -521,7 +624,9 @@ class AudioEngineManager: ObservableObject {
             reverbDamping: reverbDamping,
             inputGain: inputGain,
             outputGain: outputGain,
-            volumeBoost: volumeBoost
+            volumeBoost: volumeBoost,
+            multibandCompressorEnabled: multibandCompressorEnabled,
+            subwooferPhaseInverted: subwooferPhaseInverted
         )
     }
 
@@ -755,7 +860,14 @@ class AudioEngineManager: ObservableObject {
         // AVAudioEnvironmentNode spatializes mono sources best. Most imported songs are stereo,
         // so pan automation is the guaranteed audible 8D movement for regular MP3 files.
         let pan = sin(eightDRotationAngle) * min(0.95, clampedIntensity)
-        outputGainNode?.pan = pan
+        eightDPan = pan
+        updateOutputPan()
+    }
+
+    private func updateOutputPan() {
+        // combine base stereo balance and eightD pan
+        let combined = min(max(stereoBalance + eightDPan, -1), 1)
+        outputGainNode?.pan = combined
     }
 
     func startLevelMetering() {
@@ -769,6 +881,7 @@ class AudioEngineManager: ObservableObject {
             Task { @MainActor in self?.updateMeters(with: samples) }
         }
         isLevelMeteringActive = true
+        startAdaptiveBassTimerIfNeeded()
     }
 
     func stopLevelMetering() {
@@ -777,6 +890,43 @@ class AudioEngineManager: ObservableObject {
         isLevelMeteringActive = false
         currentLevel = 0
         spectrumLevels = Array(repeating: 0, count: spectrumBandCount)
+        stopAdaptiveBassTimer()
+    }
+
+    private func startAdaptiveBassTimerIfNeeded() {
+        guard adaptiveBassBoostEnabled else { return }
+        adaptiveTimer?.invalidate()
+        adaptiveTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.performAdaptiveBassStep() }
+        }
+    }
+
+    private func stopAdaptiveBassTimer() {
+        adaptiveTimer?.invalidate()
+        adaptiveTimer = nil
+        // restore plugin gain to intensity if adaptive disabled
+        if !adaptiveBassBoostEnabled {
+            bassBoostPlugin.intensity = bassBoostIntensity
+            adaptiveCurrentGain = bassBoostPlugin.intensity
+        }
+    }
+
+    private func performAdaptiveBassStep() {
+        guard adaptiveBassBoostEnabled else { return }
+        // determine target reduction based on overload/currentLevel
+        let overloaded = isOverloaded
+        let level = currentLevel
+        // if overloaded or level high, reduce to 40% of intensity
+        let targetMultiplier: Float = (overloaded || level >= 0.6) ? 0.4 : 1.0
+        adaptiveTargetGain = bassBoostIntensity * targetMultiplier
+
+        // exponential smoothing towards target
+        let attack: Float = 0.2
+        let release: Float = 0.05
+        let dt: Float = 0.08
+        let coeff: Float = adaptiveTargetGain > adaptiveCurrentGain ? (1 - exp(-dt / attack)) : (1 - exp(-dt / release))
+        adaptiveCurrentGain = adaptiveCurrentGain + coeff * (adaptiveTargetGain - adaptiveCurrentGain)
+        bassBoostPlugin.intensity = adaptiveCurrentGain
     }
 
     private func updateMeters(with samples: [Float]) {

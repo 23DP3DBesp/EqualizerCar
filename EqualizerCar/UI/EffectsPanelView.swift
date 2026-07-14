@@ -20,13 +20,43 @@ struct EffectsPanelView: View {
                 } label: {
                     Label("Reset all effects", systemImage: "arrow.counterclockwise")
                 }
+                Toggle("Multiband Compressor", isOn: $audioManager.multibandCompressorEnabled)
+                    .padding(.top, 4)
                 .buttonStyle(.bordered)
             }
 
             effectGroup("Tone") {
                 Toggle("Bass Boost", isOn: $audioManager.bassBoostEnabled)
+                if audioManager.bassBoostEnabled {
+                    valueSlider(title: "Bass Intensity", value: $audioManager.bassBoostIntensity, range: 0...12, step: 0.5, formatter: { "\(String(format: "%.1f", $0)) dB" })
+                    valueSlider(title: "Bass Frequency", value: $audioManager.bassBoostFrequency, range: 40...150, step: 1, formatter: { "\(Int($0)) Hz" })
+                    Toggle("Adaptive Bass", isOn: $audioManager.adaptiveBassBoostEnabled)
+                        .toggleStyle(.switch)
+                }
                 Toggle("Treble Boost", isOn: $audioManager.trebleBoostEnabled)
                 Toggle("Loudness", isOn: $audioManager.loudnessEnabled)
+                HStack {
+                    Text("Balance")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 92, alignment: .leading)
+                    Slider(value: $audioManager.stereoBalance, in: -1...1, step: 0.01)
+                    Text({ "\(Int((audioManager.stereoBalance + 1) * 50))%" }())
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 58, alignment: .trailing)
+                }
+                HStack {
+                    Text("Fader")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 92, alignment: .leading)
+                    Slider(value: $audioManager.frontRearFader, in: -1...1, step: 0.01)
+                    Text({ "\(Int((audioManager.frontRearFader + 1) * 50))%" }())
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 58, alignment: .trailing)
+                }
             }
 
             effectGroup("Gain Staging") {
@@ -65,6 +95,21 @@ struct EffectsPanelView: View {
             }
 
             effectGroup("Space") {
+                Divider()
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("Crossover Enabled", isOn: $audioManager.crossoverEnabled)
+                    if audioManager.crossoverEnabled {
+                        valueSlider(title: "Crossover Freq", value: $audioManager.crossoverFrequency, range: 60...200, step: 1, formatter: { "\(Int($0)) Hz" })
+                        Picker("Mode", selection: $audioManager.crossoverMode) {
+                            Text("Subwoofer").tag(CrossoverMode.subwoofer)
+                            Text("Speakers").tag(CrossoverMode.speakers)
+                        }
+                        .pickerStyle(.segmented)
+                        Toggle("Invert Subwoofer Phase", isOn: $audioManager.subwooferPhaseInverted)
+                            .toggleStyle(.switch)
+                    }
+                }
+
                 effectSlider(title: "Stereo Widening", isEnabled: $audioManager.stereoWideningEnabled, value: $audioManager.stereoWideningIntensity)
                 effectSlider(title: "Spatial Audio", isEnabled: $audioManager.spatialAudioEnabled, value: $audioManager.spatialAudioDepth)
                 effectSlider(title: "Surround", isEnabled: $audioManager.surroundEnabled, value: $audioManager.surroundAmount)
