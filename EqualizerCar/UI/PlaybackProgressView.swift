@@ -2,16 +2,13 @@ import SwiftUI
 
 struct PlaybackProgressView: View {
     @ObservedObject var audioManager: AudioEngineManager
+    @Environment(\.carAmbientTheme) private var theme
     @State private var pendingTime: Double = 0
     @State private var isEditing = false
 
     var body: some View {
         VStack(spacing: 6) {
-            ZStack {
-                WaveformProgressView(
-                    samples: audioManager.waveformSamples,
-                    progress: audioManager.duration > 0 ? (isEditing ? pendingTime : audioManager.currentTime) / audioManager.duration : 0
-                )
+            Group {
                 Slider(
                     value: Binding(
                         get: { isEditing ? pendingTime : audioManager.currentTime },
@@ -27,8 +24,8 @@ struct PlaybackProgressView: View {
                         }
                     }
                 )
-                .tint(.clear)
-                .opacity(0.08)
+                .tint(theme.accent)
+                .accessibilityLabel("Playback position")
                 .disabled(audioManager.duration <= 0)
             }
 
@@ -38,9 +35,9 @@ struct PlaybackProgressView: View {
                 Text(formatTime(audioManager.duration))
             }
             .font(.caption.monospacedDigit())
-            .foregroundStyle(.secondary)
+            .foregroundStyle(theme.mutedInk)
         }
-        .padding(.horizontal)
+        .frame(maxWidth: .infinity)
     }
 
     private func formatTime(_ time: Double) -> String {

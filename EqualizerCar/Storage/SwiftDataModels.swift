@@ -4,6 +4,8 @@ import SwiftData
 @Model
 final class StoredTrack {
     @Attribute(.unique) var id: UUID
+    var artist: String?
+    @Attribute(.externalStorage) var artworkData: Data?
     var title: String
     var fileName: String
     var dateAdded: Date
@@ -11,28 +13,35 @@ final class StoredTrack {
     var waveformData: Data
     var isFavorite: Bool = false
     var lastPlayedAt: Date?
+    var presetSnapshotData: Data = Data()
 
     init(track: Track) {
         id = track.id
         title = track.title
+        artist = track.artist
+        artworkData = track.artworkData
         fileName = track.fileName
         dateAdded = track.dateAdded
         duration = track.duration
-        waveformData = (try? JSONEncoder().encode(track.waveformSamples)) ?? Data()
+        waveformData = Data()
         isFavorite = track.isFavorite
         lastPlayedAt = track.lastPlayedAt
+        presetSnapshotData = (try? JSONEncoder().encode(track.presetSnapshot)) ?? Data()
     }
 
     var track: Track {
         Track(
             id: id,
             title: title,
+            artist: artist,
+            artworkData: artworkData,
             fileName: fileName,
             dateAdded: dateAdded,
             duration: duration,
-            waveformSamples: (try? JSONDecoder().decode([Float].self, from: waveformData)) ?? [],
+            waveformSamples: [],
             isFavorite: isFavorite,
-            lastPlayedAt: lastPlayedAt
+            lastPlayedAt: lastPlayedAt,
+            presetSnapshot: (try? JSONDecoder().decode(TrackPresetSnapshot?.self, from: presetSnapshotData)) ?? nil
         )
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PlayerDashboardView: View {
     @ObservedObject var audioManager: AudioEngineManager
+    @Environment(\.carAmbientTheme) private var theme
 
     var body: some View {
         ScrollView {
@@ -14,17 +15,7 @@ struct PlayerDashboardView: View {
             .padding(20)
             .padding(.bottom, 32)
         }
-        .background(
-            LinearGradient(
-                colors: [
-                    Color(red: 0.04, green: 0.05, blue: 0.07),
-                    Color(red: 0.08, green: 0.10, blue: 0.14)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .background(theme.screenBackground.ignoresSafeArea())
         .navigationTitle("Player")
     }
 
@@ -33,7 +24,7 @@ struct PlayerDashboardView: View {
             HStack {
                 Label(audioManager.isPlaying ? "Playing" : "Ready", systemImage: audioManager.isPlaying ? "waveform" : "checkmark.circle")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(audioManager.isPlaying ? .cyan : .secondary)
+                    .foregroundStyle(audioManager.isPlaying ? theme.secondaryAccent : theme.mutedInk)
 
                 Spacer()
 
@@ -45,7 +36,7 @@ struct PlayerDashboardView: View {
 
                 Text(durationText)
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.mutedInk)
             }
 
             Text(audioManager.currentTrackTitle)
@@ -56,8 +47,7 @@ struct PlayerDashboardView: View {
             LevelMeterView(level: audioManager.currentLevel)
         }
         .padding(16)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .liquidGlassPanel(cornerRadius: 12, tint: theme.surface.opacity(theme.glassOpacity))
     }
 
     private var waveformPanel: some View {
@@ -68,15 +58,14 @@ struct PlayerDashboardView: View {
                 Spacer()
                 Text(progressText)
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.mutedInk)
             }
 
             PlaybackProgressView(audioManager: audioManager)
                 .padding(.horizontal, -12)
         }
         .padding(16)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .liquidGlassPanel(cornerRadius: 12, tint: theme.surface.opacity(theme.glassOpacity))
     }
 
     private var transportControls: some View {
@@ -107,7 +96,7 @@ struct PlayerDashboardView: View {
             .disabled(audioManager.duration <= 0)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.primary)
+        .foregroundStyle(theme.ink)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
     }
@@ -120,8 +109,7 @@ struct PlayerDashboardView: View {
             SpectrumAnalyzerView(levels: audioManager.spectrumLevels)
         }
         .padding(16)
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .liquidGlassPanel(cornerRadius: 12, tint: theme.surface.opacity(theme.glassOpacity))
     }
 
     private var progressText: String {

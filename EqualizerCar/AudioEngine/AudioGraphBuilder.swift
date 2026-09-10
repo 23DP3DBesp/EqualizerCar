@@ -12,18 +12,21 @@ struct AudioGraphBuilder {
         engine: AVAudioEngine,
         playerNode: AVAudioPlayerNode,
         eqNode: AVAudioUnitEQ,
+        preEQNodes: [AVAudioNode] = [],
         toneAndDynamicsNodes: [AVAudioNode],
-        reverbNode: AVAudioNode
+        reverbNode: AVAudioNode,
+        finalProtectionNode: AVAudioNode? = nil
     ) -> Chain {
         let inputGainNode = AVAudioMixerNode()
         let environmentNode = AVAudioEnvironmentNode()
         let outputGainNode = AVAudioMixerNode()
 
-        let nodes = [playerNode, inputGainNode, eqNode] + toneAndDynamicsNodes + [reverbNode, environmentNode, outputGainNode]
+        let finalNodes = [finalProtectionNode].compactMap { $0 }
+        let nodes = [playerNode, inputGainNode] + preEQNodes + [eqNode] + toneAndDynamicsNodes + [reverbNode] + finalNodes + [environmentNode, outputGainNode]
         nodes.forEach { engine.attach($0) }
 
         var previous: AVAudioNode = playerNode
-        for node in [inputGainNode, eqNode] + toneAndDynamicsNodes + [reverbNode, environmentNode, outputGainNode] {
+        for node in [inputGainNode] + preEQNodes + [eqNode] + toneAndDynamicsNodes + [reverbNode] + finalNodes + [environmentNode, outputGainNode] {
             engine.connect(previous, to: node, format: nil)
             previous = node
         }

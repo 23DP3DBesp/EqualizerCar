@@ -6,16 +6,45 @@ import SwiftData
 class PresetManager: ObservableObject {
     @Published var presets: [Preset] = []
     @Published var activePresetID: UUID?
+    @Published var quickPresetNames: [String] {
+        didSet {
+            UserDefaults.standard.set(quickPresetNames, forKey: Self.quickPresetNamesKey)
+        }
+    }
 
     private var modelContext: ModelContext?
+    private var lastProfileHistorySave = Date.distantPast
+    private static let quickPresetNamesKey = "quickPresetNames"
+    private static let defaultQuickPresetNames = [
+        "W211 OEM Audio 20 (AUX-Fix + Anti-Boom)",
+        "W211 Harman Kardon Logic 7 (Full Clarity)",
+        "Legacy FM Transmitter (Highs Recovery & Mono Punch)",
+        "Deep Bass & Sub-Harmonics (Small Speakers)",
+        "Highway Noise Comp (Vocal & Clarity)"
+    ]
+    private static let retiredBuiltInPresetNames: Set<String> = [
+        "Flat",
+        "Pop",
+        "Acoustic",
+        "Rock",
+        "Classical",
+        "Dance",
+        "Electronic",
+        "Hip-Hop",
+        "Jazz",
+        "Podcast"
+    ]
+
     private var userPresetsFileURL: URL {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return documents.appendingPathComponent("user_presets.json")
     }
 
     init() {
+        quickPresetNames = UserDefaults.standard.stringArray(forKey: Self.quickPresetNamesKey) ?? Self.defaultQuickPresetNames
         presets = Self.builtInPresets
         loadUserPresets()
+        sanitizeQuickPresets()
     }
 
     func configureModelContext(_ context: ModelContext) {
@@ -25,114 +54,139 @@ class PresetManager: ObservableObject {
     }
 
     static let builtInPresets: [Preset] = [
-        makePreset("Studio (Flat)", [0, 0, 0, 0, 0]),
-        makePreset("Car Audio Premium", [4, 1, 2, 3, 2], effects: PresetEffectSettings(
-            bassBoostEnabled: true, trebleBoostEnabled: true, loudnessEnabled: true,
-            compressorEnabled: true, limiterEnabled: true, stereoWideningEnabled: true,
-            reverbAmount: 8, volumeBoost: 1.25
-        )),
-        makePreset("8D Drive", [3, 1, 0, 2, 3], effects: PresetEffectSettings(
-            limiterEnabled: true, stereoWideningEnabled: true, stereoWideningIntensity: 0.85,
-            spatialAudioEnabled: true, spatialAudioDepth: 0.75, surroundEnabled: true,
-            surroundAmount: 0.32, eightDAudioEnabled: true, eightDAudioIntensity: 0.85,
-            eightDAudioSpeed: 0.35, reverbAmount: 5, volumeBoost: 1.10
-        )),
-        makePreset("Bass Monster", [10, 5, 0, -1, -2], effects: PresetEffectSettings(
-            bassBoostEnabled: true, loudnessEnabled: true, compressorEnabled: true,
-            limiterEnabled: true, volumeBoost: 1.75
-        )),
-        makePreset("Speaker Destroyer", [12, 8, 4, 6, 8], effects: PresetEffectSettings(
-            bassBoostEnabled: true, trebleBoostEnabled: true, loudnessEnabled: true,
-            compressorEnabled: true, limiterEnabled: false, stereoWideningEnabled: true,
-            reverbAmount: 4, volumeBoost: 2.5
-        )),
-        makePreset("Deep Clean Bass", [7, 3, -1, 1, 0], effects: PresetEffectSettings(
-            bassBoostEnabled: true, compressorEnabled: true, limiterEnabled: true, volumeBoost: 1.25
-        )),
-        makePreset("Subwoofer Focus", [9, 4, -2, -2, -3], effects: PresetEffectSettings(
-            bassBoostEnabled: true, compressorEnabled: true, limiterEnabled: true, inputGain: 0.76
-        )),
-        makePreset("Vocal Clarity", [-2, -1, 3, 5, 3], effects: PresetEffectSettings(
-            trebleBoostEnabled: true, limiterEnabled: true
-        )),
-        makePreset("Podcast Voice", [-4, -2, 4, 3, -1], effects: PresetEffectSettings(
-            compressorEnabled: true, compressorThreshold: -24, compressorRatio: 4, limiterEnabled: true
-        )),
-        makePreset("Acoustic Warmth", [2, 3, 1, 2, 1], effects: PresetEffectSettings(
-            limiterEnabled: true, reverbAmount: 6, reverbSize: 0.35
-        )),
-        makePreset("Rock Arena", [5, 2, -1, 4, 3], effects: PresetEffectSettings(
-            compressorEnabled: true, limiterEnabled: true, stereoWideningEnabled: true,
-            stereoWideningIntensity: 0.65, reverbAmount: 10
-        )),
-        makePreset("Metal Attack", [4, 1, -2, 6, 5], effects: PresetEffectSettings(
-            trebleBoostEnabled: true, compressorEnabled: true, compressorRatio: 5, limiterEnabled: true
-        )),
-        makePreset("Hip-Hop Club", [8, 4, -1, 2, 2], effects: PresetEffectSettings(
-            bassBoostEnabled: true, loudnessEnabled: true, compressorEnabled: true,
-            limiterEnabled: true, volumeBoost: 1.35
-        )),
-        makePreset("EDM Festival", [6, 2, 0, 4, 5], effects: PresetEffectSettings(
-            bassBoostEnabled: true, trebleBoostEnabled: true, loudnessEnabled: true,
-            compressorEnabled: true, limiterEnabled: true, stereoWideningEnabled: true,
-            stereoWideningIntensity: 0.9, volumeBoost: 1.3
-        )),
-        makePreset("Pop Shine", [3, 1, 1, 4, 4], effects: PresetEffectSettings(
-            trebleBoostEnabled: true, loudnessEnabled: true, limiterEnabled: true, volumeBoost: 1.15
-        )),
-        makePreset("Jazz Lounge", [2, 2, 1, 2, 2], effects: PresetEffectSettings(
-            limiterEnabled: true, stereoWideningEnabled: true, stereoWideningIntensity: 0.45,
-            reverbAmount: 7, reverbSize: 0.42
-        )),
-        makePreset("Classical Hall", [1, 1, 0, 2, 3], effects: PresetEffectSettings(
-            limiterEnabled: true, surroundEnabled: true, surroundAmount: 0.28,
-            reverbAmount: 12, reverbSize: 0.68, outputGain: 0.86
-        )),
-        makePreset("Lo-Fi Tape", [4, 2, -1, -3, -5], effects: PresetEffectSettings(
-            compressorEnabled: true, compressorThreshold: -28, compressorRatio: 2.5,
-            limiterEnabled: true, reverbAmount: 4, outputGain: 0.84
-        )),
-        makePreset("Night Drive", [5, 2, -1, 1, 2], effects: PresetEffectSettings(
-            bassBoostEnabled: true, limiterEnabled: true, stereoWideningEnabled: true,
-            stereoWideningIntensity: 0.72, spatialAudioEnabled: true, spatialAudioDepth: 0.45
-        )),
-        makePreset("Small Speakers", [3, 2, 2, 3, 1], effects: PresetEffectSettings(
-            loudnessEnabled: true, compressorEnabled: true, limiterEnabled: true, volumeBoost: 1.2
-        )),
-        makePreset("Headphones Wide", [2, 0, 0, 3, 3], effects: PresetEffectSettings(
-            limiterEnabled: true, stereoWideningEnabled: true, stereoWideningIntensity: 1,
-            spatialAudioEnabled: true, spatialAudioDepth: 0.7
-        )),
-        makePreset("AirPods Clean", [2, -1, 1, 3, 2], effects: PresetEffectSettings(
-            compressorEnabled: true, compressorThreshold: -20, limiterEnabled: true,
-            stereoWideningEnabled: true, stereoWideningIntensity: 0.5
-        )),
-        makePreset("Old Radio", [-5, 1, 4, -2, -8], effects: PresetEffectSettings(
-            compressorEnabled: true, compressorRatio: 6, limiterEnabled: true, outputGain: 0.78
-        )),
-        makePreset("Cinema Surround", [4, 1, -1, 3, 4], effects: PresetEffectSettings(
-            limiterEnabled: true, spatialAudioEnabled: true, spatialAudioDepth: 0.85,
-            surroundEnabled: true, surroundAmount: 0.55, reverbAmount: 9
-        )),
-        makePreset("Gaming Footsteps", [-3, -2, 3, 6, 4], effects: PresetEffectSettings(
-            limiterEnabled: true, stereoWideningEnabled: true, stereoWideningIntensity: 0.8,
-            spatialAudioEnabled: true, spatialAudioDepth: 0.55
-        )),
-        makePreset("Maximum Loudness", [5, 3, 2, 3, 4], effects: PresetEffectSettings(
-            loudnessEnabled: true, compressorEnabled: true, compressorThreshold: -30,
-            compressorRatio: 6, limiterEnabled: true, limiterCeiling: -1.5,
-            inputGain: 0.72, outputGain: 0.88, volumeBoost: 1.8
-        ))
+        makePreset("W211 OEM Audio 20 (AUX-Fix + Anti-Boom)", [5, 1, -1, 2, 3], effects: PresetEffectSettings(
+            bassBoostEnabled: true,
+            bassBoostIntensity: 5.5,
+            bassBoostFrequency: 58,
+            virtualSubwooferEnabled: true,
+            virtualSubwooferMix: 0.35,
+            virtualSubwooferCutoff: 55,
+            cabinNotchEnabled: true,
+            cabinNotchFrequency: 135,
+            cabinNotchQ: 6.5,
+            cabinNotchGain: -6,
+            compressorEnabled: true,
+            compressorThreshold: -22,
+            compressorRatio: 3.2,
+            limiterEnabled: true,
+            limiterCeiling: -1.5,
+            inputGain: 0.76,
+            outputGain: 0.86,
+            volumeBoost: 1.12,
+            auxSignalBoostEnabled: true,
+            auxSignalBoostDB: 6,
+            stereoCollapseEnabled: true,
+            stereoCollapseWidth: 0.78,
+            clipperProtectionEnabled: true
+        ), category: .car),
+        makePreset("W211 Harman Kardon Logic 7 (Full Clarity)", [2, 0, -1, 2.5, 3.5], effects: PresetEffectSettings(
+            bassBoostEnabled: true,
+            bassBoostIntensity: 3.5,
+            bassBoostFrequency: 70,
+            cabinNotchEnabled: true,
+            cabinNotchFrequency: 130,
+            cabinNotchQ: 5.5,
+            cabinNotchGain: -3.5,
+            compressorEnabled: true,
+            compressorThreshold: -20,
+            compressorRatio: 2.4,
+            limiterEnabled: true,
+            limiterCeiling: -1.2,
+            stereoWideningEnabled: true,
+            stereoWideningIntensity: 0.85,
+            spatialAudioEnabled: true,
+            spatialAudioDepth: 0.28,
+            inputGain: 0.78,
+            outputGain: 0.86,
+            auxSignalBoostEnabled: true,
+            auxSignalBoostDB: 3,
+            clipperProtectionEnabled: true,
+            logic7SpatializerEnabled: true,
+            logic7Ambience: 0.42,
+            logic7CenterFocus: 0.62
+        ), category: .car),
+        makePreset("Legacy FM Transmitter (Highs Recovery & Mono Punch)", [3, -1, 1, 4.5, 5.5], effects: PresetEffectSettings(
+            bassBoostEnabled: true,
+            trebleBoostEnabled: true,
+            loudnessEnabled: true,
+            bassBoostIntensity: 4,
+            bassBoostFrequency: 78,
+            compressorEnabled: true,
+            compressorThreshold: -24,
+            compressorRatio: 4.0,
+            limiterEnabled: true,
+            limiterCeiling: -2,
+            inputGain: 0.74,
+            outputGain: 0.82,
+            volumeBoost: 1.08,
+            fmExciterEnabled: true,
+            fmExciterIntensity: 0.55,
+            stereoCollapseEnabled: true,
+            stereoCollapseWidth: 0.60,
+            clipperProtectionEnabled: true
+        ), category: .car),
+        makePreset("Deep Bass & Sub-Harmonics (Small Speakers)", [7, 3, -2, 0, 1], effects: PresetEffectSettings(
+            bassBoostEnabled: true,
+            bassBoostIntensity: 7.5,
+            bassBoostFrequency: 52,
+            virtualSubwooferEnabled: true,
+            virtualSubwooferMix: 0.65,
+            virtualSubwooferCutoff: 62,
+            cabinNotchEnabled: true,
+            cabinNotchFrequency: 145,
+            cabinNotchQ: 7,
+            cabinNotchGain: -5,
+            compressorEnabled: true,
+            compressorThreshold: -25,
+            compressorRatio: 4.4,
+            limiterEnabled: true,
+            limiterCeiling: -2.5,
+            inputGain: 0.72,
+            outputGain: 0.84,
+            clipperProtectionEnabled: true,
+            crossoverEnabled: true,
+            crossoverFrequency: 25,
+            crossoverMode: .speakers,
+            subBassGain: 5.5,
+            punchBassGain: 3,
+            warmthGain: -1,
+            bassTightness: 0.82
+        ), category: .bass),
+        makePreset("Highway Noise Comp (Vocal & Clarity)", [1, -1, 3.5, 4, 3], effects: PresetEffectSettings(
+            bassBoostEnabled: true,
+            trebleBoostEnabled: true,
+            loudnessEnabled: true,
+            bassBoostIntensity: 2.5,
+            bassBoostFrequency: 85,
+            cabinNotchEnabled: true,
+            cabinNotchFrequency: 138,
+            cabinNotchQ: 6,
+            cabinNotchGain: -5.5,
+            compressorEnabled: true,
+            compressorThreshold: -27,
+            compressorRatio: 4.8,
+            compressorAttack: 0.008,
+            compressorRelease: 0.16,
+            limiterEnabled: true,
+            limiterCeiling: -1.5,
+            stereoWideningEnabled: true,
+            stereoWideningIntensity: 0.42,
+            inputGain: 0.76,
+            outputGain: 0.88,
+            volumeBoost: 1.16,
+            clipperProtectionEnabled: true
+        ), category: .car)
     ]
 
     private static func makePreset(
         _ name: String,
         _ gains: [Float],
-        effects: PresetEffectSettings = PresetEffectSettings(limiterEnabled: true)
+        effects: PresetEffectSettings = PresetEffectSettings(limiterEnabled: true),
+        category: PresetCategory? = nil
     ) -> Preset {
         let frequencies: [Float] = [60, 250, 1000, 4000, 12000]
         let points = zip(frequencies, gains).map { PresetPoint(frequency: $0, gain: $1) }
-        return Preset(name: name, points: points, effects: effects, isBuiltIn: true, category: inferredCategory(for: name))
+        return Preset(name: name, points: points, effects: effects, isBuiltIn: true, category: category ?? inferredCategory(for: name))
     }
 
     private static func inferredCategory(for name: String) -> PresetCategory {
@@ -167,15 +221,21 @@ class PresetManager: ObservableObject {
                 abs(log10(first.frequency) - log10(frequency)) < abs(log10(second.frequency) - log10(frequency))
             }?.gain ?? 0
         }
+        let filterTypes = audioManager.bandFrequencies.map { frequency in
+            preset.points.min { first, second in
+                abs(log10(first.frequency) - log10(frequency)) < abs(log10(second.frequency) - log10(frequency))
+            }?.filterType ?? .parametric
+        }
         audioManager.applyGains(gains)
+        audioManager.applyFilterTypes(filterTypes)
         audioManager.applyEffects(preset.effects)
         activePresetID = preset.id
-        saveProfileHistory(name: preset.name, effects: preset.effects)
+        saveProfileHistoryIfNeeded(name: preset.name, effects: preset.effects)
     }
 
     func saveCurrentAsPreset(name: String, audioManager: AudioEngineManager) {
-        let points = zip(audioManager.bandFrequencies, audioManager.bandGains).map {
-            PresetPoint(frequency: $0, gain: $1)
+        let points = zip(zip(audioManager.bandFrequencies, audioManager.bandGains), audioManager.bandFilterTypes).map { frequencyAndGain, filterType in
+            PresetPoint(frequency: frequencyAndGain.0, gain: frequencyAndGain.1, filterType: filterType)
         }
         let newPreset = Preset(
             name: name,
@@ -192,6 +252,7 @@ class PresetManager: ObservableObject {
     func deletePreset(_ preset: Preset) {
         guard !preset.isBuiltIn else { return }
         presets.removeAll { $0.id == preset.id }
+        quickPresetNames.removeAll { $0 == preset.name }
         if activePresetID == preset.id {
             activePresetID = nil
         }
@@ -227,6 +288,25 @@ class PresetManager: ObservableObject {
         }
     }
 
+    var quickPresets: [Preset] {
+        quickPresetNames.compactMap { name in
+            presets.first { $0.name == name }
+        }
+    }
+
+    var availableQuickPresetCandidates: [Preset] {
+        presets.filter { !quickPresetNames.contains($0.name) }
+    }
+
+    func addQuickPreset(_ preset: Preset) {
+        guard !quickPresetNames.contains(preset.name) else { return }
+        quickPresetNames.append(preset.name)
+    }
+
+    func removeQuickPreset(_ preset: Preset) {
+        quickPresetNames.removeAll { $0 == preset.name }
+    }
+
     func userPresets() -> [Preset] {
         presets.filter { !$0.isBuiltIn }
     }
@@ -245,9 +325,9 @@ class PresetManager: ObservableObject {
             let importedPresets = try JSONDecoder().decode([Preset].self, from: data)
             let existingIDs = Set(presets.map(\.id))
             let newPresets = importedPresets
-                .filter { !existingIDs.contains($0.id) }
+                .filter { !existingIDs.contains($0.id) && !Self.isRetiredBuiltInPresetName($0.name) }
                 .map { preset in
-                    Preset(
+                    Self.normalizedUserPreset(Preset(
                         id: preset.id,
                         name: preset.name,
                         points: preset.points,
@@ -255,7 +335,7 @@ class PresetManager: ObservableObject {
                         isBuiltIn: false,
                         category: preset.category,
                         isFavorite: preset.isFavorite
-                    )
+                    ))
                 }
             guard !newPresets.isEmpty else { return }
             presets.append(contentsOf: newPresets)
@@ -280,9 +360,20 @@ class PresetManager: ObservableObject {
         do {
             let data = try Data(contentsOf: userPresetsFileURL)
             let userPresets = try JSONDecoder().decode([Preset].self, from: data)
+                .filter { !Self.isRetiredBuiltInPresetName($0.name) }
+                .map(Self.normalizedUserPreset)
             presets.append(contentsOf: userPresets)
+            sanitizeQuickPresets()
         } catch {
             print("Ошибка загрузки пресетов: \(error)")
+        }
+    }
+
+    private func sanitizeQuickPresets() {
+        let availableNames = Set(presets.map(\.name))
+        quickPresetNames = quickPresetNames.filter { availableNames.contains($0) }
+        if quickPresetNames.isEmpty {
+            quickPresetNames = Self.defaultQuickPresetNames.filter { availableNames.contains($0) }
         }
     }
 
@@ -290,7 +381,10 @@ class PresetManager: ObservableObject {
         guard let modelContext else { return }
         do {
             let descriptor = FetchDescriptor<StoredPreset>(predicate: #Predicate { !$0.isBuiltIn })
-            let storedPresets = try modelContext.fetch(descriptor).map(\.preset)
+            let storedPresets = try modelContext.fetch(descriptor)
+                .map(\.preset)
+                .filter { !Self.isRetiredBuiltInPresetName($0.name) }
+                .map(Self.normalizedUserPreset)
             let builtIns = Self.builtInPresets
             let builtInIDs = Set(builtIns.map(\.id))
             presets = builtIns + storedPresets.filter { !builtInIDs.contains($0.id) }
@@ -331,6 +425,111 @@ class PresetManager: ObservableObject {
     private func migrateJSONPresetsToSwiftData() {
         guard modelContext != nil else { return }
         userPresets().forEach(savePresetToSwiftData)
+    }
+
+    private static func isRetiredBuiltInPresetName(_ name: String) -> Bool {
+        retiredBuiltInPresetNames.contains(name.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    private static func normalizedUserPreset(_ preset: Preset) -> Preset {
+        Preset(
+            id: preset.id,
+            name: preset.name,
+            points: preset.points.map(normalizedPoint),
+            effects: normalizedEffects(preset.effects),
+            isBuiltIn: false,
+            category: preset.category,
+            isFavorite: preset.isFavorite
+        )
+    }
+
+    private static func normalizedPoint(_ point: PresetPoint) -> PresetPoint {
+        PresetPoint(
+            frequency: clamp(point.frequency, 20, 20_000),
+            gain: clamp(point.gain, -18, 18),
+            filterType: point.filterType
+        )
+    }
+
+    private static func normalizedEffects(_ effects: PresetEffectSettings) -> PresetEffectSettings {
+        PresetEffectSettings(
+            bassBoostEnabled: effects.bassBoostEnabled,
+            trebleBoostEnabled: effects.trebleBoostEnabled,
+            loudnessEnabled: effects.loudnessEnabled,
+            bassBoostIntensity: clamp(effects.bassBoostIntensity, 0, 12),
+            bassBoostFrequency: clamp(effects.bassBoostFrequency, 40, 150),
+            virtualSubwooferEnabled: effects.virtualSubwooferEnabled,
+            virtualSubwooferMix: clamp(effects.virtualSubwooferMix, 0, 1),
+            virtualSubwooferCutoff: clamp(effects.virtualSubwooferCutoff, 30, 70),
+            cabinNotchEnabled: effects.cabinNotchEnabled,
+            cabinNotchFrequency: clamp(effects.cabinNotchFrequency, 100, 200),
+            cabinNotchQ: clamp(effects.cabinNotchQ, 4, 8),
+            cabinNotchGain: clamp(effects.cabinNotchGain, -18, 0),
+            compressorEnabled: effects.compressorEnabled,
+            compressorThreshold: clamp(effects.compressorThreshold, -60, 0),
+            compressorRatio: clamp(effects.compressorRatio, 1, 20),
+            compressorAttack: clamp(effects.compressorAttack, 0.001, 0.100),
+            compressorRelease: clamp(effects.compressorRelease, 0.020, 1.000),
+            limiterEnabled: effects.limiterEnabled,
+            limiterCeiling: clamp(effects.limiterCeiling, -12, 0),
+            limiterRelease: clamp(effects.limiterRelease, 0.010, 0.500),
+            stereoWideningEnabled: effects.stereoWideningEnabled,
+            stereoWideningIntensity: clamp(effects.stereoWideningIntensity, 0, 1),
+            spatialAudioEnabled: effects.spatialAudioEnabled,
+            spatialAudioDepth: clamp(effects.spatialAudioDepth, 0, 1),
+            surroundEnabled: effects.surroundEnabled,
+            surroundAmount: clamp(effects.surroundAmount, 0, 1),
+            eightDAudioEnabled: effects.eightDAudioEnabled,
+            eightDAudioIntensity: clamp(effects.eightDAudioIntensity, 0, 1),
+            eightDAudioSpeed: clamp(effects.eightDAudioSpeed, 0.03, 0.75),
+            eightDAudioMode: effects.eightDAudioMode,
+            softClipperEnabled: effects.softClipperEnabled,
+            reverbAmount: clamp(effects.reverbAmount, 0, 100),
+            reverbSize: clamp(effects.reverbSize, 0, 1),
+            reverbDamping: clamp(effects.reverbDamping, 0, 1),
+            inputGain: clamp(effects.inputGain, 0, 1.25),
+            outputGain: clamp(effects.outputGain, 0, 1.25),
+            volumeBoost: clamp(effects.volumeBoost, 1, 3),
+            auxSignalBoostEnabled: effects.auxSignalBoostEnabled,
+            auxSignalBoostDB: clamp(effects.auxSignalBoostDB, 0, 12),
+            fmExciterEnabled: effects.fmExciterEnabled,
+            fmExciterIntensity: clamp(effects.fmExciterIntensity, 0, 1),
+            groundLoopSuppressorEnabled: effects.groundLoopSuppressorEnabled,
+            groundLoopHumFrequency: clamp(effects.groundLoopHumFrequency, 45, 65),
+            engineNoiseNotchEnabled: effects.engineNoiseNotchEnabled,
+            engineNoiseFrequency: clamp(effects.engineNoiseFrequency, 80, 420),
+            stereoCollapseEnabled: effects.stereoCollapseEnabled,
+            stereoCollapseWidth: clamp(effects.stereoCollapseWidth, 0, 1),
+            clipperProtectionEnabled: effects.clipperProtectionEnabled,
+            logic7SpatializerEnabled: effects.logic7SpatializerEnabled,
+            logic7Ambience: clamp(effects.logic7Ambience, 0, 1),
+            logic7CenterFocus: clamp(effects.logic7CenterFocus, 0, 1),
+            multibandCompressorEnabled: effects.multibandCompressorEnabled,
+            adaptiveBassBoostEnabled: effects.adaptiveBassBoostEnabled,
+            crossoverEnabled: effects.crossoverEnabled,
+            crossoverFrequency: clamp(effects.crossoverFrequency, 25, 200),
+            crossoverMode: effects.crossoverMode,
+            subwooferPhaseInverted: effects.subwooferPhaseInverted,
+            smartLoudBassMode: effects.smartLoudBassMode,
+            subBassGain: clamp(effects.subBassGain, -12, 12),
+            punchBassGain: clamp(effects.punchBassGain, -12, 12),
+            warmthGain: clamp(effects.warmthGain, -12, 12),
+            bassTightness: clamp(effects.bassTightness, 0, 1),
+            subwooferModeEnabled: effects.subwooferModeEnabled,
+            bassMonoBelow100Enabled: effects.bassMonoBelow100Enabled
+        )
+    }
+
+    private static func clamp(_ value: Float, _ lowerBound: Float, _ upperBound: Float) -> Float {
+        guard value.isFinite else { return lowerBound }
+        return min(max(value, lowerBound), upperBound)
+    }
+
+    private func saveProfileHistoryIfNeeded(name: String, effects: PresetEffectSettings) {
+        let now = Date()
+        guard now.timeIntervalSince(lastProfileHistorySave) > 4 else { return }
+        lastProfileHistorySave = now
+        saveProfileHistory(name: name, effects: effects)
     }
 
     private func saveProfileHistory(name: String, effects: PresetEffectSettings) {

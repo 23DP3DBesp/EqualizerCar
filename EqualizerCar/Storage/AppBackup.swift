@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct AppBackup: Codable, Sendable {
     var tracks: [Track]
+    var playlists: [AudioPlaylist]
     var audioFiles: [String: Data]
     var userPresets: [Preset]
     var currentEffects: PresetEffectSettings
@@ -11,6 +12,7 @@ struct AppBackup: Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case tracks
+        case playlists
         case audioFiles
         case userPresets
         case currentEffects
@@ -19,12 +21,14 @@ struct AppBackup: Codable, Sendable {
 
     nonisolated init(
         tracks: [Track],
+        playlists: [AudioPlaylist] = [],
         audioFiles: [String: Data] = [:],
         userPresets: [Preset],
         currentEffects: PresetEffectSettings,
         exportedAt: Date
     ) {
         self.tracks = tracks
+        self.playlists = playlists
         self.audioFiles = audioFiles
         self.userPresets = userPresets
         self.currentEffects = currentEffects
@@ -34,6 +38,7 @@ struct AppBackup: Codable, Sendable {
     nonisolated init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         tracks = try container.decode([Track].self, forKey: .tracks)
+        playlists = try container.decodeIfPresent([AudioPlaylist].self, forKey: .playlists) ?? []
         audioFiles = try container.decodeIfPresent([String: Data].self, forKey: .audioFiles) ?? [:]
         userPresets = try container.decode([Preset].self, forKey: .userPresets)
         currentEffects = try container.decode(PresetEffectSettings.self, forKey: .currentEffects)
@@ -43,6 +48,7 @@ struct AppBackup: Codable, Sendable {
     nonisolated func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(tracks, forKey: .tracks)
+        try container.encode(playlists, forKey: .playlists)
         try container.encode(audioFiles, forKey: .audioFiles)
         try container.encode(userPresets, forKey: .userPresets)
         try container.encode(currentEffects, forKey: .currentEffects)

@@ -12,18 +12,19 @@ import SwiftUI
 /// потребует FFT через Accelerate framework, добавим отдельным шагом.
 /// Это первая, простая версия визуализации звука.
 struct LevelMeterView: View {
+    @Environment(\.carAmbientTheme) private var theme
     let level: Float
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.gray.opacity(0.15))
+                    .fill(Color.black.opacity(0.04))
 
                 RoundedRectangle(cornerRadius: 4)
                     .fill(
                         LinearGradient(
-                            colors: [.blue, .green, .yellow, .red],
+                            colors: [theme.secondaryAccent, theme.secondaryAccent, theme.accent],
                             startPoint: .leading,
                             endPoint: .trailing
                         )

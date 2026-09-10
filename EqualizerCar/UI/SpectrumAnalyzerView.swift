@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SpectrumAnalyzerView: View {
+    @Environment(\.carAmbientTheme) private var theme
     let levels: [Float]
 
     var body: some View {
@@ -18,7 +19,6 @@ struct SpectrumAnalyzerView: View {
                             width: barWidth,
                             height: barHeight(level: level, availableHeight: geometry.size.height)
                         )
-                        .animation(.linear(duration: 0.06), value: level)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -26,13 +26,17 @@ struct SpectrumAnalyzerView: View {
         .frame(height: 64)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(.thinMaterial)
+        .background(theme.surface.opacity(0.96))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(theme.accent.opacity(0.18), lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private var barGradient: LinearGradient {
         LinearGradient(
-            colors: [Color.cyan, Color.blue, Color.pink],
+            colors: [theme.secondaryAccent, theme.secondaryAccent, theme.accent],
             startPoint: .bottom,
             endPoint: .top
         )
@@ -47,5 +51,5 @@ struct SpectrumAnalyzerView: View {
 #Preview {
     SpectrumAnalyzerView(levels: (0..<24).map { Float($0) / 23 })
         .padding()
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
 }

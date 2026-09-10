@@ -2,21 +2,12 @@ import SwiftUI
 
 struct NeumorphicButtonStyle: ButtonStyle {
     var cornerRadius: CGFloat = 12
-    var backgroundColor: Color = Color.white.opacity(0.9)
+    var backgroundColor: Color = AppTheme.liquidGlassDark.panelTint
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(8)
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(backgroundColor)
-                    .shadow(color: Color.black.opacity(configuration.isPressed ? 0.05 : 0.08), radius: configuration.isPressed ? 4 : 14, x: configuration.isPressed ? 1 : 6, y: configuration.isPressed ? 1 : 6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(Color.white.opacity(0.6), lineWidth: 0.5)
-                            .blendMode(.overlay)
-                    )
-            )
+            .liquidGlassPanel(cornerRadius: cornerRadius, tint: backgroundColor, interactive: true)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
     }
@@ -24,8 +15,12 @@ struct NeumorphicButtonStyle: ButtonStyle {
 
 struct GlassPlayerView: View {
     @EnvironmentObject var audioManager: AudioEngineManager
+    @EnvironmentObject var library: LibraryManager
+    @EnvironmentObject var presetManager: PresetManager
+    @Environment(\.carAmbientTheme) private var theme
     @State private var isVisible = false
     @State private var playPulse = false
+    @State private var showNowPlaying = false
 
     var body: some View {
         GeometryReader { geo in
@@ -33,8 +28,7 @@ struct GlassPlayerView: View {
             let artworkSize = min(max(geo.size.width * (isCompact ? 0.38 : 0.34), 100), 220)
 
             ZStack {
-                // soft background blur for glass effect
-                Color(.systemBackground)
+                theme.screenBackground
                     .ignoresSafeArea()
 
                 VStack(spacing: isCompact ? 12 : 18) {
@@ -42,17 +36,20 @@ struct GlassPlayerView: View {
 
                     HStack(spacing: 16) {
                         artwork(size: artworkSize)
+                            .onTapGesture {
+                                showNowPlaying = true
+                            }
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text(audioManager.currentTrackTitle)
                                 .font(isCompact ? .headline : .title2)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(theme.ink)
                                 .lineLimit(2)
 
                             Text("Artist")
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(theme.mutedInk)
 
                             progress
                         }
@@ -65,18 +62,8 @@ struct GlassPlayerView: View {
                 .padding(.top, isCompact ? 12 : 18)
                 .padding(.vertical, 12)
                 .frame(maxWidth: 760)
-                .background(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .fill(LinearGradient(colors: [Color.white.opacity(0.85), Color.white.opacity(0.70)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .background(.ultraThinMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color.white.opacity(0.6), lineWidth: 0.6)
-                                .blur(radius: 0.3)
-                        )
-                        .shadow(color: Color.black.opacity(0.06), radius: 30, x: 0, y: 14)
-                        .padding(.horizontal, isCompact ? 12 : 20)
-                )
+                .padding(.horizontal, isCompact ? 12 : 20)
+                .liquidGlassPanel(cornerRadius: 28, tint: theme.surface.opacity(theme.glassOpacity))
                 .scaleEffect(isVisible ? 1 : 0.995)
                 .opacity(isVisible ? 1 : 0)
                 .animation(.interactiveSpring(response: 0.45, dampingFraction: 0.8, blendDuration: 0.2), value: isVisible)
@@ -84,15 +71,22 @@ struct GlassPlayerView: View {
                     isVisible = true
                     if audioManager.isPlaying { playPulse = true }
                 }
+                .fullScreenCover(isPresented: $showNowPlaying) {
+                    NowPlayingView(
+                        audioManager: audioManager,
+                        library: library,
+                        presetManager: presetManager
+                    )
+                }
             }
         }
     }
 
     private var header: some View {
         HStack {
-            Button(action: { /* TODO: close */ }) {
-                Image(systemName: "xmark")
-                    .foregroundColor(.primary)
+            Button(action: { showNowPlaying = true }) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .foregroundStyle(theme.ink)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(NeumorphicButtonStyle(cornerRadius: 18))
@@ -100,13 +94,14 @@ struct GlassPlayerView: View {
             Spacer()
 
             Text("Listen now")
-                .font(.subheadline).foregroundColor(.secondary)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(theme.mutedInk)
 
             Spacer()
 
-            Button(action: {}) {
-                Image(systemName: "ellipsis")
-                    .foregroundColor(.primary)
+            Button(action: { showNowPlaying = true }) {
+                Image(systemName: "waveform")
+                    .foregroundStyle(theme.ink)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(NeumorphicButtonStyle(cornerRadius: 18))
@@ -117,7 +112,7 @@ struct GlassPlayerView: View {
     private func artwork(size: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color.white.opacity(0.9))
+                .fill(theme.surface.opacity(0.96))
                 .frame(width: size, height: size)
                 .overlay(
                     Group {
@@ -128,10 +123,10 @@ struct GlassPlayerView: View {
                                 .frame(width: size, height: size)
                                 .clipShape(RoundedRectangle(cornerRadius: 18))
                         } else {
-                            Color.gray.opacity(0.3)
+                            theme.surface.opacity(theme.glassOpacity)
                                 .frame(width: size, height: size)
                                 .clipShape(RoundedRectangle(cornerRadius: 18))
-                                .overlay(Text("No Art").foregroundColor(.secondary))
+                                .overlay(Text("No Art").foregroundStyle(theme.mutedInk))
                         }
                     }
                 )
@@ -147,6 +142,7 @@ struct GlassPlayerView: View {
                 let t = Double(newVal) * (audioManager.duration)
                 audioManager.seek(to: t)
             }))
+            .tint(theme.secondaryAccent)
 
             HStack {
                 Text(formattedTime(audioManager.currentTime))
@@ -155,6 +151,7 @@ struct GlassPlayerView: View {
                 Text(formattedTime(audioManager.duration))
                     .font(.caption)
             }
+            .foregroundStyle(theme.mutedInk)
         }
     }
 
@@ -163,7 +160,7 @@ struct GlassPlayerView: View {
             Button(action: { audioManager.previousTrackRequested?() }) {
                 Image(systemName: "backward.fill")
                     .font(.title2)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(theme.ink)
                     .frame(width: 56, height: 56)
             }
             .buttonStyle(NeumorphicButtonStyle(cornerRadius: 28))
@@ -173,7 +170,11 @@ struct GlassPlayerView: View {
                     .font(.title)
                     .foregroundColor(.white)
                     .frame(width: 76, height: 76)
-                    .background(Circle().fill(Color.red))
+                    .background(
+                        Circle()
+                            .fill(LinearGradient(colors: [theme.secondaryAccent, theme.accent], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .shadow(color: theme.accent.opacity(0.35), radius: 22, x: 0, y: 12)
+                    )
             }
             .scaleEffect(playPulse ? 1.02 : 1)
             .animation(audioManager.isPlaying ? .easeInOut(duration: 0.9).repeatForever(autoreverses: true) : .default, value: playPulse)
@@ -181,7 +182,7 @@ struct GlassPlayerView: View {
             Button(action: { audioManager.nextTrackRequested?() }) {
                 Image(systemName: "forward.fill")
                     .font(.title2)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(theme.ink)
                     .frame(width: 56, height: 56)
             }
             .buttonStyle(NeumorphicButtonStyle(cornerRadius: 28))
@@ -206,6 +207,8 @@ struct GlassPlayerView_Previews: PreviewProvider {
     static var previews: some View {
         GlassPlayerView()
             .environmentObject(AudioEngineManager())
+            .environmentObject(LibraryManager())
+            .environmentObject(PresetManager())
             .previewDevice("iPhone 15")
     }
 }
