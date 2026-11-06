@@ -4,141 +4,130 @@ struct PlayerHomeView: View {
     @ObservedObject var audioManager: AudioEngineManager
     @ObservedObject var library: LibraryManager
     @ObservedObject var presetManager: PresetManager
+    @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.carAmbientTheme) private var theme
     let addMusicAction: () -> Void
     var openLibraryAction: () -> Void = {}
-
-    @State private var showQuickPresetPicker = false
+    var openPlayerAction: () -> Void = {}
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 32) {
                 header
-                heroPlayer
-                quickPicks
-                recentlyPlayed
-                quickActions
-                dspModes
-                queuePreview
+                featured
+                HStack(spacing: 12) {
+                    shortcut("Избранное", detail: "Треков: \(library.favoriteTracks.count)", icon: "heart", section: "Избранное")
+                    shortcut("Недавно прослушанные", detail: "Продолжите прослушивание", icon: "clock", section: "Recent")
+                }
+                if !library.recentlyPlayedTracks.isEmpty {
+                    VStack(alignment: .leading, spacing: 16) {
+                        StudioSectionHeader(title: "Back in rotation")
+                        ForEach(library.recentlyPlayedTracks.prefix(4)) { track in
+                            Button {
+                                library.selectPlaybackSource(.recent, tracks: library.recentlyPlayedTracks)
+                                library.play(track, audioManager: audioManager)
+                            } label: {
+                                HStack {
+                                    StudioTrackIdentity(track: track, current: audioManager.currentTrackID == track.id)
+                                    Image(systemName: "play.fill").font(.caption).foregroundStyle(theme.mutedInk).frame(width: 44, height: 44)
+                                }
+                            }.buttonStyle(StudioPressStyle())
+                        }
+                    }
+                }
+                playlists
+                VStack(alignment: .leading, spacing: 16) {
+                    StudioSectionHeader(title: "Your sound", subtitle: "Quick access to your saved DSP presets")
+                    StudioPresetSelector(audio: audioManager, presets: presetManager)
+                }
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 10)
-            .padding(.bottom, 24)
-        }
-        .background(theme.screenBackground.ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showQuickPresetPicker) {
-            quickPresetPicker
-        }
+            .padding(.horizontal, 24).padding(.top, 16).padding(.bottom, 32)
+            .frame(maxWidth: 900).frame(maxWidth: .infinity)
+        }.background(theme.background.ignoresSafeArea()).toolbar(.hidden, for: .navigationBar)
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(theme.accent)
-                .frame(width: 34, height: 34)
-                .overlay(
-                    Text("E")
-                        .font(.headline.weight(.black))
-                        .foregroundStyle(.white)
-                )
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(greeting)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(theme.ink)
-                Text("\(library.tracks.count) tracks in your library")
-                    .font(.caption)
-                    .foregroundStyle(theme.mutedInk)
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("EQUALIZERCAR").font(.system(size: 10, weight: .medium)).tracking(3).foregroundStyle(theme.mutedInk)
+                Text(greeting).font(.system(size: 30, weight: .semibold)).foregroundStyle(theme.ink).lineLimit(1).minimumScaleFactor(0.75)
             }
-
-            Spacer()
-
-            Button(action: addMusicAction) {
-                Image(systemName: "plus")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(Circle().fill(theme.accent))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var heroPlayer: some View {
-        VStack(spacing: 16) {
-            HStack(alignment: .center, spacing: 16) {
-                albumArt(size: 118, iconSize: 42)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(audioManager.isPlaying ? "Now playing" : "Ready")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(theme.accent)
-                    Text(audioManager.currentTrackTitle)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(theme.ink)
-                        .lineLimit(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(audioManager.currentTrackID.flatMap { library.track(with: $0)?.artistDisplayName } ?? "Choose something you love")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(theme.mutedInk)
+            Spacer(minLength: 8)
+            Menu {
+                Picker("Appearance", selection: $themeManager.appearance) {
+                    ForEach(AppAppearance.allCases) { appearance in Label(appearance.title, systemImage: appearance.icon).tag(appearance) }
                 }
-
-                Spacer(minLength: 0)
-            }
-
-        }
-
-        .padding(18)
-        .background(
-            LinearGradient(
-                colors: [Color.white, Color.white],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-
-    private var quickActions: some View {
-        HStack(spacing: 10) {
-            actionChip("Shuffle", icon: "shuffle", isActive: library.isShuffleEnabled) {
-                library.isShuffleEnabled.toggle()
-            }
-            actionChip("Bass Lab", icon: "speaker.wave.3.fill", isActive: audioManager.smartLoudBassMode != .clean) {
-                audioManager.applySmartLoudBassMode(audioManager.smartLoudBassMode == .clean ? .loud : .clean)
-            }
-            actionChip("Safe", icon: "shield.fill", isActive: audioManager.safeLoudModeEnabled) {
-                audioManager.safeLoudModeEnabled.toggle()
-            }
+            } label: {
+                Image(systemName: theme.isDark ? "moon" : "sun.max").font(.system(size: 19)).foregroundStyle(theme.ink)
+                    .frame(width: 48, height: 48).background(theme.surface, in: Circle())
+            }.accessibilityLabel("Change appearance")
         }
     }
-
-    private var quickPicks: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("Your music")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 16) {
-                    collection("Favorites", subtitle: "\(library.favoriteTracks.count) songs", icon: "heart.fill", section: "Favorites", tracks: library.favoriteTracks, source: .favorites)
-                    collection("Recently Played", subtitle: "\(library.recentlyPlayedTracks.count) songs", icon: "clock", section: "Recent", tracks: library.recentlyPlayedTracks, source: .recent)
-                    collection("All Music", subtitle: "\(library.tracks.count) songs", icon: "music.note", section: "All", tracks: library.tracks, source: .library)
+    private var featured: some View {
+        Button(action: currentTrack == nil ? addMusicAction : openPlayerAction) {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack(spacing: 20) {
+                    TrackArtwork(track: currentTrack, size: 108)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(currentTrack == nil ? "MAKE IT YOURS" : "ON YOUR PLAYER")
+                            .font(.system(size: 9, weight: .medium)).tracking(2).foregroundStyle(theme.mutedInk)
+                        Text(currentTrack?.title ?? "A space for\nyour music.")
+                            .font(.system(size: 23, weight: .semibold)).foregroundStyle(theme.ink).lineLimit(3)
+                        Text(currentTrack?.artistDisplayName ?? "Import your favorite tracks.")
+                            .font(.caption).foregroundStyle(theme.mutedInk).lineLimit(2)
+                    }
+                    Spacer(minLength: 0)
                 }
+                HStack {
+                    Text(currentTrack == nil ? "Add music" : "Open player").font(.subheadline.weight(.medium))
+                    Spacer()
+                    Image(systemName: currentTrack == nil ? "plus" : "arrow.up.right")
+                }.foregroundStyle(theme.ink)
+            }.padding(24).background(theme.surface, in: RoundedRectangle(cornerRadius: 28))
+        }.buttonStyle(StudioPressStyle())
+    }
+    private func shortcut(_ title: String, detail: String, icon: String, section: String) -> some View {
+        Button { library.browseSection = section; openLibraryAction() } label: {
+            VStack(alignment: .leading, spacing: 16) {
+                Image(systemName: icon).font(.system(size: 24, weight: .light))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(LocalizedStringKey(title)).font(.subheadline.weight(.medium)).lineLimit(1).minimumScaleFactor(0.8)
+                    Text(detail).font(.caption).foregroundStyle(theme.mutedInk).lineLimit(2)
+                }
+            }.foregroundStyle(theme.ink).frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
+                .padding(16).background(theme.surface, in: RoundedRectangle(cornerRadius: 24))
+        }.buttonStyle(StudioPressStyle())
+    }
+    private var playlists: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                StudioSectionHeader(title: "Made by you")
+                Spacer()
+                Button { library.browseSection = "Playlists"; openLibraryAction() } label: {
+                    Image(systemName: "arrow.up.right").frame(width: 44, height: 44)
+                }.foregroundStyle(theme.mutedInk).accessibilityLabel("Все плейлисты")
             }
-            sectionTitle("Playlists")
             if library.playlists.isEmpty {
-                Button("Create your first playlist") { library.browseSection = "Playlists"; openLibraryAction() }
-                    .font(.subheadline).padding(.vertical, 8)
+                Button { library.browseSection = "Playlists"; openLibraryAction() } label: {
+                    HStack(spacing: 16) {
+                        Image(systemName: "plus").font(.title2).frame(width: 48, height: 48).background(theme.background, in: RoundedRectangle(cornerRadius: 16))
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("Ваш первый плейлист").font(.subheadline.weight(.medium))
+                            Text("Музыка для каждой поездки.").font(.caption).foregroundStyle(theme.mutedInk)
+                        }
+                        Spacer(minLength: 0)
+                    }.foregroundStyle(theme.ink).padding(16).background(theme.surface, in: RoundedRectangle(cornerRadius: 24))
+                }.buttonStyle(StudioPressStyle())
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 16) {
                         ForEach(library.playlists) { playlist in
-                            MusicCollectionCard(title: playlist.name, subtitle: "\(playlist.trackIDs.count) songs", icon: "music.note.list", artworkTrack: library.tracks(for: playlist.trackIDs).first) {
-                                library.browsePlaylistID = playlist.id
-                                library.browseSection = "Playlists"
-                                openLibraryAction()
+                            MusicCollectionCard(title: playlist.name, subtitle: "Треков: \(playlist.trackIDs.count)", icon: "music.note.list", artworkTrack: library.tracks(for: playlist.trackIDs).first) {
+                                library.browsePlaylistID = playlist.id; library.browseSection = "Playlists"; openLibraryAction()
                             } play: {
-                                playFirst(library.tracks(for: playlist.trackIDs), source: .playlist(playlist.id))
+                                let tracks = library.tracks(for: playlist.trackIDs)
+                                library.selectPlaybackSource(.playlist(playlist.id), tracks: tracks)
+                                if let first = tracks.first { library.play(first, audioManager: audioManager) }
                             }
                         }
                     }
@@ -146,247 +135,9 @@ struct PlayerHomeView: View {
             }
         }
     }
-
-    private func collection(_ title: String, subtitle: String, icon: String, section: String, tracks: [Track], source: LibraryManager.PlaybackSource) -> some View {
-        MusicCollectionCard(title: title, subtitle: subtitle, icon: icon) {
-            library.browseSection = section
-            openLibraryAction()
-        } play: {
-            playFirst(tracks, source: source)
-        }
-    }
-
-    private var dspModes: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("Loud bass modes")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(SmartLoudBassMode.allCases) { mode in
-                        Button {
-                            audioManager.applySmartLoudBassMode(mode)
-                        } label: {
-                            Text(mode.rawValue)
-                                .font(.subheadline.weight(.bold))
-                                .foregroundStyle(audioManager.smartLoudBassMode == mode ? .black : theme.ink)
-                                .padding(.horizontal, 16)
-                                .frame(height: 42)
-                                .background(audioManager.smartLoudBassMode == mode ? theme.accent : Color.black.opacity(0.04))
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
-    }
-
-    private var recentlyPlayed: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("Recently played")
-            if library.recentlyPlayedTracks.isEmpty {
-                emptyRow("Nothing played yet", icon: "clock")
-            } else {
-                VStack(spacing: 4) {
-                    ForEach(library.recentlyPlayedTracks.prefix(5)) { track in
-                        trackRow(track, source: .recent, tracks: library.recentlyPlayedTracks)
-                    }
-                }
-            }
-        }
-    }
-
-    private var queuePreview: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                sectionTitle("Next in queue")
-                Spacer()
-                if !library.queueIDs.isEmpty {
-                    Button("Clear") { library.clearQueue() }
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(theme.accent)
-                }
-            }
-            if queueTracks.isEmpty {
-                emptyRow("Queue is empty", icon: "text.line.first.and.arrowtriangle.forward")
-            } else {
-                VStack(spacing: 4) {
-                    ForEach(queueTracks.prefix(4)) { track in
-                        trackRow(track, source: .selection, tracks: queueTracks)
-                    }
-                }
-            }
-        }
-    }
-
-    private var quickPresetPicker: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(presetManager.availableQuickPresetCandidates) { preset in
-                        Button {
-                            presetManager.addQuickPreset(preset)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: preset.category.systemImage)
-                                    .foregroundStyle(theme.accent)
-                                    .frame(width: 28)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(preset.name)
-                                        .font(.subheadline.weight(.semibold))
-                                    Text(preset.category.rawValue)
-                                        .font(.caption)
-                                        .foregroundStyle(theme.mutedInk)
-                                }
-                                Spacer()
-                                Image(systemName: "plus.circle.fill")
-                                    .foregroundStyle(theme.accent)
-                            }
-                            .padding(12)
-                            .background(theme.surface.opacity(0.96))
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(16)
-            }
-            .background(theme.screenBackground.ignoresSafeArea())
-            .navigationTitle("Add Quick Preset")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { showQuickPresetPicker = false }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.title3.weight(.bold))
-            .foregroundStyle(theme.ink)
-    }
-
-    private func actionChip(_ title: String, icon: String, isActive: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: icon)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(isActive ? .black : theme.ink)
-                .frame(maxWidth: .infinity)
-                .frame(height: 40)
-                .background(isActive ? theme.accent : Color.black.opacity(0.04))
-                .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func libraryTile(title: String, subtitle: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                ZStack {
-                    color.opacity(0.95)
-                    Image(systemName: icon)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.black.opacity(0.75))
-                }
-                .frame(width: 54, height: 54)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.subheadline.weight(.bold))
-                        .foregroundStyle(theme.ink)
-                        .lineLimit(1)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(theme.mutedInk)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(8)
-            .background(Color.black.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func trackRow(_ track: Track, source: LibraryManager.PlaybackSource, tracks: [Track]) -> some View {
-        Button {
-            library.selectPlaybackSource(source, tracks: tracks)
-            library.play(track, audioManager: audioManager)
-        } label: {
-            HStack(spacing: 12) {
-                TrackArtwork(track: track, size: 40)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(track.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(audioManager.currentTrackID == track.id ? theme.accent : theme.ink)
-                        .lineLimit(1)
-                    Text(track.artistDisplayName + " · " + formatDuration(track.duration))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(theme.mutedInk)
-                }
-                Spacer()
-                if audioManager.currentTrackID == track.id {
-                    Image(systemName: "speaker.wave.2.fill")
-                        .foregroundStyle(theme.accent)
-                }
-            }
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func emptyRow(_ title: String, icon: String) -> some View {
-        Label(title, systemImage: icon)
-            .font(.subheadline)
-            .foregroundStyle(theme.mutedInk)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
-            .background(Color.black.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-
-    private func albumArt(size: CGFloat, iconSize: CGFloat) -> some View {
-        TrackArtwork(track: audioManager.currentTrackID.flatMap { library.track(with: $0) }, size: size)
-    }
-
-    private func playFirst(_ tracks: [Track], source: LibraryManager.PlaybackSource = .selection) {
-        library.selectPlaybackSource(source, tracks: tracks)
-        guard let track = tracks.first else { return }
-        library.play(track, audioManager: audioManager)
-    }
-
-    private var queueTracks: [Track] {
-        library.tracks(for: library.queueIDs)
-    }
-
+    private var currentTrack: Track? { audioManager.currentTrackID.flatMap { library.track(with: $0) } ?? library.recentlyPlayedTracks.first }
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<12: return "Good morning"
-        case 12..<18: return "Good afternoon"
-        default: return "Good evening"
-        }
+        return hour < 12 ? "Доброе утро" : hour < 18 ? "Добрый день" : "Добрый вечер"
     }
-
-    private var progressText: String {
-        "\(formatDuration(audioManager.currentTime)) / \(formatDuration(audioManager.duration))"
-    }
-
-    private func formatDuration(_ duration: Double) -> String {
-        guard duration.isFinite, duration > 0 else { return "0:00" }
-        let seconds = Int(duration)
-        return String(format: "%d:%02d", seconds / 60, seconds % 60)
-    }
-}
-
-#Preview {
-    PlayerHomeView(
-        audioManager: AudioEngineManager(),
-        library: LibraryManager(),
-        presetManager: PresetManager(),
-        addMusicAction: {}
-    )
 }

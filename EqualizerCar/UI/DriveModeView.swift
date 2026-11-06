@@ -31,7 +31,7 @@ struct DriveModeView: View {
         HStack(spacing: 12) {
             Image(systemName: "car.fill")
                 .font(.title3.weight(.bold))
-                .foregroundStyle(.black)
+                .foregroundStyle(theme.onAccent)
                 .frame(width: 44, height: 44)
                 .background(theme.accent)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -68,7 +68,7 @@ struct DriveModeView: View {
                     )
                     Image(systemName: audioManager.isPlaying ? "waveform" : "music.note")
                         .font(.system(size: 42, weight: .black))
-                        .foregroundStyle(.black.opacity(0.72))
+                        .foregroundStyle(theme.onAccent)
                 }
                 .frame(width: 104, height: 104)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -144,9 +144,9 @@ struct DriveModeView: View {
                         HStack(spacing: 10) {
                             Image(systemName: preset.category.systemImage)
                                 .font(.headline.weight(.bold))
-                                .foregroundStyle(presetManager.activePresetID == preset.id ? .black : theme.accent)
+                                .foregroundStyle(presetManager.activePresetID == preset.id ? theme.onAccent : theme.accent)
                                 .frame(width: 34, height: 34)
-                                .background(presetManager.activePresetID == preset.id ? theme.accent : Color.black.opacity(0.04))
+                                .background(presetManager.activePresetID == preset.id ? theme.accent : theme.surface)
                                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
 
                             Text(shortPresetName(preset.name))
@@ -158,10 +158,10 @@ struct DriveModeView: View {
                         }
                         .padding(10)
                         .frame(minHeight: 66)
-                        .background(presetManager.activePresetID == preset.id ? theme.accent.opacity(0.18) : Color.black.opacity(0.04))
+                        .background(presetManager.activePresetID == preset.id ? theme.accent.opacity(0.18) : theme.surface)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(presetManager.activePresetID == preset.id ? theme.accent.opacity(0.48) : Color.black.opacity(0.04), lineWidth: 1)
+                                .stroke(presetManager.activePresetID == preset.id ? theme.accent.opacity(0.48) : theme.surface, lineWidth: 1)
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
@@ -189,7 +189,7 @@ struct DriveModeView: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.black.opacity(0.04))
+                        .fill(theme.surface)
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(
                             LinearGradient(
@@ -224,13 +224,13 @@ struct DriveModeView: View {
             VStack(spacing: 8) {
                 Image(systemName: systemImage)
                     .font(.system(size: size == .primary ? 34 : 24, weight: .black))
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.caption.weight(.black))
             }
-            .foregroundStyle(size == .primary ? .black : theme.ink)
+            .foregroundStyle(size == .primary ? theme.onAccent : theme.ink)
             .frame(maxWidth: .infinity)
             .frame(height: size == .primary ? 116 : 96)
-            .background(size == .primary ? theme.accent : Color.black.opacity(0.04))
+            .background(size == .primary ? theme.accent : theme.surface)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -238,7 +238,7 @@ struct DriveModeView: View {
 
     private func metricTile(_ title: String, value: String, color: Color) -> some View {
         VStack(spacing: 4) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.caption2.weight(.black))
                 .foregroundStyle(theme.mutedInk)
             Text(value)
@@ -249,7 +249,7 @@ struct DriveModeView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 66)
-        .background(Color.black.opacity(0.04))
+        .background(theme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 

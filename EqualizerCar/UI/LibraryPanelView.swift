@@ -3,16 +3,32 @@ import SwiftUI
 struct LibraryPanelView: View {
     private enum LibrarySection: String, CaseIterable, Identifiable {
         case all = "All"
+        case artists = "Artists"
+        case albums = "Albums"
         case favorites = "Favorites"
         case recent = "Recent"
-        case queue = "Queue"
+        case queue = "Очередь"
         case playlists = "Playlists"
 
         var id: String { rawValue }
 
+        var localizedTitle: String {
+            switch self {
+            case .all: return "Все треки"
+            case .artists: return "Исполнители"
+            case .albums: return "Альбомы"
+            case .favorites: return "Избранное"
+            case .recent: return "Недавние"
+            case .queue: return "Очередь"
+            case .playlists: return "Плейлисты"
+            }
+        }
+
         var icon: String {
             switch self {
             case .all: return "music.note.list"
+            case .artists: return "person.2"
+            case .albums: return "square.stack"
             case .favorites: return "heart.fill"
             case .recent: return "clock.fill"
             case .queue: return "text.line.first.and.arrowtriangle.forward"
@@ -35,12 +51,19 @@ struct LibraryPanelView: View {
         get { library.browsePlaylistID }
         nonmutating set { library.browsePlaylistID = newValue }
     }
+    @State private var selectedArtist: String?
+    @State private var selectedAlbum: String?
     @State private var renamingTrack: Track?
     @State private var renameTitle = ""
     @State private var showNewPlaylistAlert = false
     @State private var newPlaylistName = ""
     @State private var renamingPlaylist: AudioPlaylist?
     @State private var playlistRenameName = ""
+    @State private var isSelectionMode = false
+    @State private var selectedTrackIDs = Set<UUID>()
+    @State private var isScanningDuplicates = false
+    @State private var duplicateCopiesSelected = 0
+    @State private var showDeleteSelectionConfirmation = false
 
     var body: some View {
         ScrollView {
@@ -49,10 +72,13 @@ struct LibraryPanelView: View {
                 filters
                 if library.isImporting { importingRow }
                 if let importErrorMessage = library.importErrorMessage { errorRow(importErrorMessage) }
-                playlistShelf
                 searchAndSort
+                if selectedSection == .playlists || !library.searchText.isEmpty { playlistShelf }
+                if selectedSection == .albums || !library.searchText.isEmpty { albumShelf }
+                if selectedSection == .artists || !library.searchText.isEmpty { artistShelf }
+                if selectedSection == .favorites || (selectedSection == .albums && selectedAlbum != nil) || (selectedSection == .playlists && selectedPlaylist != nil) { collectionHero }
                 if selectedSection == .playlists { playlistControls }
-                content
+                if (selectedSection != .artists || selectedArtist != nil) && (selectedSection != .albums || selectedAlbum != nil) { content }
             }
             .padding(.horizontal, 18)
             .padding(.top, 10)
@@ -63,6 +89,8 @@ struct LibraryPanelView: View {
         .toolbar(.hidden, for: .navigationBar)
         .onAppear { updatePlaybackScope() }
         .onChange(of: selectedSection) { _, _ in updatePlaybackScope() }
+        .onChange(of: selectedAlbum) { _, _ in updatePlaybackScope() }
+        .onChange(of: selectedArtist) { _, _ in updatePlaybackScope() }
         .onChange(of: selectedPlaylistID) { _, _ in updatePlaybackScope() }
         .onChange(of: library.searchText) { _, _ in updatePlaybackScope() }
         .onChange(of: library.sortOption) { _, _ in updatePlaybackScope() }
@@ -104,12 +132,18 @@ struct LibraryPanelView: View {
                 playlistRenameName = ""
             }
         }
+        .alert("Delete selected tracks?", isPresented: $showDeleteSelectionConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete \(selectedTrackIDs.count)", role: .destructive) { deleteSelectedTracks() }
+        } message: {
+            Text("The selected audio files will be removed from the library and its playlists.")
+        }
     }
 
     private var header: some View {
         HStack(spacing: 12) {
             Circle()
-                .fill(Color.black.opacity(0.04))
+                .fill(theme.surface)
                 .frame(width: 42, height: 42)
                 .overlay(
                     Image(systemName: "music.note")
@@ -117,10 +151,10 @@ struct LibraryPanelView: View {
                 )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Your Library")
+                Text("Медиатека")
                     .font(.title.weight(.bold))
                     .foregroundStyle(theme.ink)
-                Text("\(library.tracks.count) songs • \(library.playlists.count) playlists")
+                Text("Треков: \(library.tracks.count) • Плейлистов: \(library.playlists.count)")
                     .font(.caption)
                     .foregroundStyle(theme.mutedInk)
             }
@@ -144,12 +178,12 @@ struct LibraryPanelView: View {
                     Button {
                         selectedSection = section
                     } label: {
-                        Label(section.rawValue, systemImage: section.icon)
+                        Text(section == .all ? "Песни" : section.localizedTitle)
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(selectedSection == section ? theme.accent : theme.ink)
+                            .foregroundStyle(selectedSection == section ? theme.onAccent : theme.mutedInk)
                             .padding(.horizontal, 12)
-                            .frame(height: 36)
-                            .background(selectedSection == section ? theme.accent.opacity(0.08) : Color.clear)
+                            .frame(height: 40)
+                            .background(selectedSection == section ? theme.accent : theme.surface)
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -174,18 +208,19 @@ struct LibraryPanelView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    playlistCard(title: "Liked Songs", subtitle: "\(library.favoriteTracks.count) songs", icon: "heart.fill", color: .pink) {
+                    playlistCard(title: "Понравившиеся", subtitle: "Треков: \(library.favoriteTracks.count)", icon: "heart.fill", color: .pink) {
                         selectedSection = .favorites
                     }
-                    playlistCard(title: "Recently Played", subtitle: "\(library.recentlyPlayedTracks.count) songs", icon: "clock.fill", color: theme.accent) {
+                    playlistCard(title: "Недавно прослушанные", subtitle: "Треков: \(library.recentlyPlayedTracks.count)", icon: "clock.fill", color: theme.accent) {
                         selectedSection = .recent
                     }
-                    playlistCard(title: "Queue", subtitle: "\(library.queueIDs.count) songs", icon: "text.line.first.and.arrowtriangle.forward", color: .cyan) {
+                    playlistCard(title: "Очередь", subtitle: "Треков: \(library.queueIDs.count)", icon: "text.line.first.and.arrowtriangle.forward", color: .cyan) {
                         selectedSection = .queue
                     }
-                    ForEach(library.playlists) { playlist in
-                        playlistCard(title: playlist.name, subtitle: "\(playlist.trackIDs.count) songs", icon: "music.note.list", color: playlistColor(for: playlist), artworkTrack: library.tracks(for: playlist.trackIDs).first) {
+                    ForEach(library.playlists.filter { library.searchText.isEmpty || $0.name.localizedCaseInsensitiveContains(library.searchText) }) { playlist in
+                        playlistCard(title: playlist.name, subtitle: "Треков: \(playlist.trackIDs.count)", icon: "music.note.list", color: playlistColor(for: playlist), artworkTrack: library.tracks(for: playlist.trackIDs).first) {
                             selectedPlaylistID = playlist.id
+                            library.searchText = ""
                             selectedSection = .playlists
                         }
                     }
@@ -193,10 +228,10 @@ struct LibraryPanelView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Image(systemName: "plus")
                                 .font(.title2.weight(.bold))
-                                .foregroundStyle(.black)
+                                .foregroundStyle(theme.onAccent)
                                 .frame(width: 54, height: 54)
                                 .background(theme.accent)
-                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                             Text("New Playlist")
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(theme.ink)
@@ -218,20 +253,20 @@ struct LibraryPanelView: View {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(theme.mutedInk)
-                TextField("Search in your library", text: $library.searchText)
+                TextField("Songs, artists, playlists", text: $library.searchText)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .foregroundStyle(theme.ink)
             }
             .padding(.horizontal, 12)
             .frame(height: 44)
-            .background(Color.black.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(theme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
 
             HStack {
                 Picker("Sort", selection: $library.sortOption) {
                     ForEach(LibraryManager.SortOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
+                        Text(option.localizedTitle).tag(option)
                     }
                 }
                 .pickerStyle(.menu)
@@ -246,9 +281,124 @@ struct LibraryPanelView: View {
                 .font(.caption.weight(.bold))
                 .tint(theme.accent)
             }
+            HStack(spacing: 10) {
+                Button(isSelectionMode ? "Done" : "Select") {
+                    isSelectionMode.toggle()
+                    if !isSelectionMode { selectedTrackIDs.removeAll(); duplicateCopiesSelected = 0 }
+                }
+                .buttonStyle(.bordered)
+                Button {
+                    selectedTrackIDs = Set(currentVisibleTracks.map(\.id))
+                    duplicateCopiesSelected = 0
+                    isSelectionMode = true
+                } label: { Label("Select visible", systemImage: "checkmark.circle") }
+                    .buttonStyle(.bordered)
+                Button {
+                    isScanningDuplicates = true
+                    Task {
+                        let groups = await library.findDuplicateTrackGroups()
+                        let duplicateIDs = groups.flatMap { Array($0.dropFirst()).map(\.id) }
+                        await MainActor.run {
+                            library.searchText = ""
+                            selectedSection = .all
+                            selectedArtist = nil
+                            selectedAlbum = nil
+                            selectedTrackIDs = Set(duplicateIDs)
+                            duplicateCopiesSelected = duplicateIDs.count
+                            isSelectionMode = true
+                            isScanningDuplicates = false
+                        }
+                    }
+                } label: {
+                    if isScanningDuplicates { ProgressView() }
+                    else { Label("Find duplicates", systemImage: "doc.on.doc") }
+                }
+                .buttonStyle(.bordered)
+                .disabled(isScanningDuplicates || library.tracks.count < 2)
+                if !selectedTrackIDs.isEmpty {
+                    Button(role: .destructive) { showDeleteSelectionConfirmation = true } label: {
+                        Label("Delete (\(selectedTrackIDs.count))", systemImage: "trash")
+                    }.buttonStyle(.bordered)
+                }
+            }
             .font(.caption.weight(.semibold))
             .foregroundStyle(theme.mutedInk)
+            if duplicateCopiesSelected > 0 {
+                Text("Found \(duplicateCopiesSelected) duplicate copies by file hash. The oldest copy in each group is kept.")
+                    .font(.caption).foregroundStyle(theme.mutedInk)
+            }
         }
+    }
+
+    private var albumShelf: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            StudioSectionHeader(title: "Albums")
+            let albums = Array(Set(library.filteredTracks.compactMap(\.album).filter { !$0.isEmpty })).sorted()
+            if albums.isEmpty { Text("Albums appear when your files contain album tags.").font(.caption).foregroundStyle(theme.mutedInk) }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(albums, id: \.self) { album in
+                        let tracks = library.tracks.filter { $0.album == album }
+                        MusicCollectionCard(title: album, subtitle: "Треков: \(tracks.count)", icon: "square.stack", artworkTrack: tracks.first) {
+                            library.searchText = ""; selectedAlbum = album; selectedSection = .albums
+                        } play: {
+                            library.searchText = ""; selectedAlbum = album; selectedSection = .albums
+                            library.selectPlaybackSource(.selection, tracks: tracks)
+                            if let first = tracks.first { library.play(first, audioManager: audioManager) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var artistShelf: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            StudioSectionHeader(title: "Artists")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(Array(Set(library.filteredTracks.map(\.artistDisplayName))).sorted(), id: \.self) { artist in
+                        Button { selectedArtist = artist; selectedSection = .artists } label: {
+                            Label(artist, systemImage: "person.crop.circle")
+                                .font(.subheadline).lineLimit(1).padding(16)
+                                .background(theme.surface, in: RoundedRectangle(cornerRadius: 16))
+                                .foregroundStyle(theme.ink)
+                        }.buttonStyle(StudioPressStyle())
+                    }
+                }
+            }
+        }
+    }
+
+    private var collectionHero: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            HStack(spacing: 20) {
+                TrackArtwork(track: currentVisibleTracks.first, size: 108)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("\(selectedSection == .favorites ? "ИЗБРАННОЕ" : selectedSection == .albums ? "АЛЬБОМ" : "ПЛЕЙЛИСТ") · \(currentVisibleTracks.count) ТРЕКОВ")
+                        .font(.system(size: 10, weight: .medium)).tracking(1).foregroundStyle(theme.mutedInk)
+                    Text(LocalizedStringKey(sectionHeading)).font(.system(size: 26, weight: .semibold)).foregroundStyle(theme.ink).lineLimit(3)
+                    Text("Your personal soundtrack").font(.caption).foregroundStyle(theme.mutedInk)
+                }
+            }
+            HStack(spacing: 12) {
+                Button { playCollection(shuffled: false) } label: {
+                    Label("Play", systemImage: "play.circle").frame(maxWidth: .infinity).frame(height: 48)
+                        .background(theme.accent, in: RoundedRectangle(cornerRadius: 16)).foregroundStyle(theme.onAccent)
+                }
+                Button { playCollection(shuffled: true) } label: {
+                    Label("Shuffle", systemImage: "shuffle").frame(maxWidth: .infinity).frame(height: 48)
+                        .background(theme.surface, in: RoundedRectangle(cornerRadius: 16)).foregroundStyle(theme.ink)
+                }
+            }.font(.subheadline.weight(.medium)).buttonStyle(StudioPressStyle()).disabled(currentVisibleTracks.isEmpty)
+        }.padding(.vertical, 8)
+    }
+
+    private func playCollection(shuffled: Bool) {
+        library.isShuffleEnabled = shuffled
+        updatePlaybackScope()
+        let first = shuffled ? currentVisibleTracks.randomElement() : currentVisibleTracks.first
+        if let first { library.play(first, audioManager: audioManager) }
     }
 
     private var playlistControls: some View {
@@ -273,7 +423,7 @@ struct LibraryPanelView: View {
 
             if let selectedPlaylist {
                 HStack(spacing: 14) {
-                    Text("\(selectedPlaylist.trackIDs.count) songs")
+                    Text("Треков: \(selectedPlaylist.trackIDs.count)")
                         .font(.caption)
                         .foregroundStyle(theme.mutedInk)
                     Spacer()
@@ -291,14 +441,14 @@ struct LibraryPanelView: View {
             }
         }
         .padding(12)
-        .background(Color.black.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(theme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(sectionHeading)
+                Text(LocalizedStringKey(sectionHeading))
                     .font(.title3.weight(.bold))
                     .foregroundStyle(theme.ink)
                 Spacer()
@@ -331,8 +481,8 @@ struct LibraryPanelView: View {
                 .foregroundStyle(theme.mutedInk)
         }
         .padding(12)
-        .background(Color.black.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(theme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func errorRow(_ message: String) -> some View {
@@ -343,7 +493,7 @@ struct LibraryPanelView: View {
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.red.opacity(0.14))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func playlistCard(title: String, subtitle: String, icon: String, color: Color, artworkTrack: Track? = nil, action: @escaping () -> Void) -> some View {
@@ -357,29 +507,20 @@ struct LibraryPanelView: View {
     private func trackRow(_ track: Track, number: Int) -> some View {
         HStack(spacing: 12) {
             Button {
-                updatePlaybackScope()
-                library.play(track, audioManager: audioManager)
+                if isSelectionMode {
+                    if selectedTrackIDs.contains(track.id) { selectedTrackIDs.remove(track.id) }
+                    else { selectedTrackIDs.insert(track.id) }
+                } else {
+                    updatePlaybackScope()
+                    library.play(track, audioManager: audioManager)
+                }
             } label: {
-                HStack(spacing: 12) {
-                    Text("\(number)")
-                        .font(.caption.monospacedDigit()).foregroundStyle(theme.mutedInk).frame(width: 22)
-                    TrackArtwork(track: track, size: 40)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(track.title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(audioManager.currentTrackID == track.id ? theme.accent : theme.ink)
-                            .lineLimit(1)
-                        if sizeClass != .regular {
-                            Text(track.artistDisplayName).font(.caption).foregroundStyle(theme.mutedInk).lineLimit(1)
-                        }
+                HStack(spacing: 8) {
+                    if isSelectionMode {
+                        Image(systemName: selectedTrackIDs.contains(track.id) ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(selectedTrackIDs.contains(track.id) ? theme.accent : theme.mutedInk)
                     }
-                    Spacer(minLength: 0)
-                    if sizeClass == .regular {
-                        Text(track.artistDisplayName).font(.subheadline).foregroundStyle(theme.mutedInk)
-                            .lineLimit(1).frame(maxWidth: 180, alignment: .leading)
-                    }
-                    Text(formatDuration(track.duration)).font(.caption.monospacedDigit())
-                        .foregroundStyle(theme.mutedInk).frame(width: 42, alignment: .trailing)
+                    StudioTrackIdentity(track: track, number: number, current: audioManager.currentTrackID == track.id)
                 }
             }
             .buttonStyle(.plain)
@@ -431,16 +572,26 @@ struct LibraryPanelView: View {
                     .frame(width: 34, height: 34)
             }
         }
-        .padding(.vertical, 7)
+        .padding(.vertical, 8).padding(.horizontal, 8)
+        .background(audioManager.currentTrackID == track.id ? theme.surface : .clear, in: RoundedRectangle(cornerRadius: 16))
         .musicHover()
+    }
+
+    private func deleteSelectedTracks() {
+        let tracksToDelete = library.tracks.filter { selectedTrackIDs.contains($0.id) }
+        if tracksToDelete.contains(where: { $0.id == audioManager.currentTrackID }) { audioManager.unloadCurrentTrack() }
+        library.deleteTracks(tracksToDelete)
+        selectedTrackIDs.removeAll()
+        duplicateCopiesSelected = 0
+        isSelectionMode = false
     }
 
     private func albumArt(track: Track, size: CGFloat) -> some View {
         ZStack {
-            Color(white: 0.96)
+            theme.surface
             Image(systemName: audioManager.currentTrackID == track.id ? "speaker.wave.2.fill" : "music.note")
                 .font(.headline.weight(.bold))
-                .foregroundStyle(.black.opacity(0.68))
+                .foregroundStyle(theme.mutedInk)
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -451,7 +602,7 @@ struct LibraryPanelView: View {
             Image(systemName: icon)
                 .font(.system(size: 38, weight: .bold))
                 .foregroundStyle(theme.mutedInk)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.headline.weight(.bold))
                 .foregroundStyle(theme.ink)
             if let actionTitle, let action {
@@ -462,14 +613,18 @@ struct LibraryPanelView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 36)
-        .background(Color.black.opacity(0.04))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(theme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var currentVisibleTracks: [Track] {
         switch selectedSection {
         case .all:
             return library.filteredTracks
+        case .artists:
+            return library.filteredTracks.filter { $0.artistDisplayName == selectedArtist }
+        case .albums:
+            return library.filteredTracks.filter { $0.album == selectedAlbum }
         case .favorites:
             return library.filteredTracks.filter(\.isFavorite)
         case .recent:
@@ -488,6 +643,7 @@ struct LibraryPanelView: View {
         let source: LibraryManager.PlaybackSource
         switch selectedSection {
         case .all: source = .library
+        case .artists, .albums: source = .selection
         case .favorites: source = .favorites
         case .recent: source = .recent
         case .queue: source = .selection
@@ -501,27 +657,33 @@ struct LibraryPanelView: View {
 
     private var sectionHeading: String {
         switch selectedSection {
-        case .all: return "Songs"
-        case .favorites: return "Liked Songs"
-        case .recent: return "Recently Played"
-        case .queue: return "Queue"
-        case .playlists: return selectedPlaylist?.name ?? "Playlists"
+        case .all: return "Песни"
+        case .artists: return selectedArtist ?? "Исполнители"
+        case .albums: return selectedAlbum ?? "Альбомы"
+        case .favorites: return "Понравившиеся"
+        case .recent: return "Недавно прослушанные"
+        case .queue: return "Очередь"
+        case .playlists: return selectedPlaylist?.name ?? "Плейлисты"
         }
     }
 
     private var emptyTitle: String {
         switch selectedSection {
-        case .all: return "No matching songs"
-        case .favorites: return "No liked songs yet"
-        case .recent: return "Nothing played yet"
-        case .queue: return "Queue is empty"
-        case .playlists: return library.playlists.isEmpty ? "No playlists yet" : "Playlist is empty"
+        case .all: return "Подходящих треков не найдено"
+        case .artists: return "Подходящих исполнителей не найдено"
+        case .albums: return "Нет данных об альбомах"
+        case .favorites: return "В избранном пока нет треков"
+        case .recent: return "Вы ещё ничего не слушали"
+        case .queue: return "Очередь пуста"
+        case .playlists: return library.playlists.isEmpty ? "Плейлистов пока нет" : "Плейлист пуст"
         }
     }
 
     private var emptyIcon: String {
         switch selectedSection {
         case .all: return "magnifyingglass"
+        case .artists: return "person.2"
+        case .albums: return "square.stack"
         case .favorites: return "heart"
         case .recent: return "clock"
         case .queue: return "text.line.first.and.arrowtriangle.forward"
@@ -531,7 +693,7 @@ struct LibraryPanelView: View {
 
     private func trackSubtitle(_ track: Track) -> String {
         if selectedSection == .recent, let lastPlayedAt = track.lastPlayedAt {
-            return "Played \(lastPlayedAt.formatted(date: .abbreviated, time: .shortened))"
+            return "Прослушан \(lastPlayedAt.formatted(date: .abbreviated, time: .shortened))"
         }
         return track.artistDisplayName
     }

@@ -5,6 +5,7 @@ import SwiftData
 final class StoredTrack {
     @Attribute(.unique) var id: UUID
     var artist: String?
+    var album: String?
     @Attribute(.externalStorage) var artworkData: Data?
     var title: String
     var fileName: String
@@ -19,6 +20,7 @@ final class StoredTrack {
         id = track.id
         title = track.title
         artist = track.artist
+        album = track.album
         artworkData = track.artworkData
         fileName = track.fileName
         dateAdded = track.dateAdded
@@ -34,6 +36,7 @@ final class StoredTrack {
             id: id,
             title: title,
             artist: artist,
+            album: album,
             artworkData: artworkData,
             fileName: fileName,
             dateAdded: dateAdded,

@@ -516,7 +516,24 @@ class PresetManager: ObservableObject {
             warmthGain: clamp(effects.warmthGain, -12, 12),
             bassTightness: clamp(effects.bassTightness, 0, 1),
             subwooferModeEnabled: effects.subwooferModeEnabled,
-            bassMonoBelow100Enabled: effects.bassMonoBelow100Enabled
+            bassMonoBelow100Enabled: effects.bassMonoBelow100Enabled,
+            parametricNotchEnabled: effects.parametricNotchEnabled,
+            parametricNotchFrequency: clamp(effects.parametricNotchFrequency, 20, 20_000),
+            parametricNotchQ: clamp(effects.parametricNotchQ, 0.3, 20),
+            parametricNotchDepth: clamp(effects.parametricNotchDepth, -36, 0),
+            subsonicEnabled: effects.subsonicEnabled,
+            subsonicCutoff: clamp(effects.subsonicCutoff, 20, 60),
+            vocalClarityEnabled: effects.vocalClarityEnabled,
+            vocalClarityAmount: clamp(effects.vocalClarityAmount, 0, 1),
+            nightModeEnabled: effects.nightModeEnabled,
+            nightModeAmount: clamp(effects.nightModeAmount, 0, 1),
+            tapeSaturationEnabled: effects.tapeSaturationEnabled,
+            tapeSaturationDrive: clamp(effects.tapeSaturationDrive, 0, 1),
+            tapeSaturationMix: clamp(effects.tapeSaturationMix, 0, 1),
+            transientShaperEnabled: effects.transientShaperEnabled,
+            transientAttack: clamp(effects.transientAttack, -12, 12),
+            transientSustain: clamp(effects.transientSustain, -12, 12),
+            softClipperDrive: clamp(effects.softClipperDrive, 0, 1)
         )
     }
 

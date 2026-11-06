@@ -36,7 +36,7 @@ struct RetroDashboardView: View {
             colors: [
                 theme.accent.opacity(0.18),
                 theme.background,
-                Color.black
+                theme.background
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -68,7 +68,7 @@ struct RetroDashboardView: View {
                     Label("Headroom Guard", systemImage: "shield")
                 }
                 Button { cycleRepeatMode() } label: {
-                    Label("Repeat: \(library.repeatMode.rawValue)", systemImage: "repeat")
+                    Label("Повтор: \(library.repeatMode.localizedTitle)", systemImage: "repeat")
                 }
             } label: {
                 Image(systemName: "line.3.horizontal")
@@ -107,7 +107,7 @@ struct RetroDashboardView: View {
                 Text("VOL \(Int(audioManager.outputGain * 100))")
                 Spacer()
                 Text(library.isShuffleEnabled ? "RND" : "SEQ")
-                Text(library.repeatMode == .off ? "REP OFF" : "REP \(library.repeatMode.rawValue.uppercased())")
+                Text(library.repeatMode == .off ? "ПОВТ. ВЫКЛ." : "ПОВТ. \(library.repeatMode.localizedTitle.uppercased())")
             }
             .font(.system(.caption2, design: .monospaced, weight: .bold))
             .foregroundStyle(theme.mutedInk)
@@ -115,7 +115,7 @@ struct RetroDashboardView: View {
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.black.opacity(0.74))
+                .fill(theme.surface)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .stroke(theme.accent.opacity(0.44), lineWidth: 1.2)
@@ -155,7 +155,7 @@ struct RetroDashboardView: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: prominent ? 28 : 18, weight: .black))
-                .foregroundStyle(prominent || isActive ? .black : theme.accent)
+                .foregroundStyle(prominent || isActive ? theme.onAccent : theme.accent)
                 .frame(width: prominent ? 72 : 52, height: prominent ? 72 : 52)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -172,7 +172,7 @@ struct RetroDashboardView: View {
 
     private func statusPill(_ title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(.caption2, design: .monospaced, weight: .bold))
                 .foregroundStyle(theme.mutedInk)
             Text(value)
@@ -249,7 +249,7 @@ private struct RetroVUMeterView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
         .padding(10)
-        .background(Color.black.opacity(0.52))
+        .background(theme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)

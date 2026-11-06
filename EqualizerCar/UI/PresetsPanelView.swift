@@ -37,7 +37,7 @@ struct PresetsPanelView: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("PROFILE BANK")
+                Text("БИБЛИОТЕКА ПРЕСЕТОВ")
                     .font(.system(.title2, design: .rounded, weight: .bold))
                     .foregroundStyle(theme.ink)
                 Text("\(visiblePresets.count) visible presets")
@@ -78,14 +78,14 @@ struct PresetsPanelView: View {
                     Button {
                         selectedCategory = category
                     } label: {
-                        Label(category.rawValue, systemImage: category.systemImage)
+                        Label(category.localizedTitle, systemImage: category.systemImage)
                     }
                 }
             } label: {
                 HStack(spacing: 10) {
                     Image(systemName: selectedCategory.systemImage)
                         .foregroundStyle(theme.secondaryAccent)
-                    Text(selectedCategory.rawValue)
+                    Text(selectedCategory.localizedTitle)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.ink)
                     Spacer()
@@ -130,7 +130,7 @@ struct PresetsPanelView: View {
                             .font(.body.weight(.semibold))
                             .foregroundStyle(theme.ink)
                             .lineLimit(1)
-                        Text("\(preset.category.rawValue) - \(preset.isBuiltIn ? "Built-in" : "User preset")")
+                        Text("\(preset.category.localizedTitle) · \(preset.isBuiltIn ? "Встроенный" : "Пользовательский пресет")")
                             .font(.caption)
                             .foregroundStyle(theme.mutedInk)
                     }
@@ -138,7 +138,7 @@ struct PresetsPanelView: View {
                     Spacer()
 
                     if presetManager.activePresetID == preset.id {
-                        Text("LOADED")
+                        Text("АКТИВЕН")
                             .font(.caption2.monospaced().weight(.bold))
                             .foregroundStyle(theme.secondaryAccent)
                             .padding(.horizontal, 8)

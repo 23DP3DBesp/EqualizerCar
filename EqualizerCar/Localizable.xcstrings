@@ -1,0 +1,2818 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ - %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ — %@"
+          }
+        }
+      }
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ · %lld SONGS" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld ТРЕКОВ"
+          }
+        }
+      }
+    },
+    "%@ · %lld ТРЕКОВ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld ТРЕКОВ"
+          }
+        }
+      }
+    },
+    "%@ dB" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ дБ"
+          }
+        }
+      }
+    },
+    "%@ songs" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Треков: %@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld Hz" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Гц"
+          }
+        }
+      }
+    },
+    "%lld issues found" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найдено проблем: %lld"
+          }
+        }
+      }
+    },
+    "%lld playlists" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плейлистов: %lld"
+          }
+        }
+      }
+    },
+    "%lld songs" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Треков: %lld"
+          }
+        }
+      }
+    },
+    "%lld songs • %lld playlists" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld треков • %lld плейлистов"
+          }
+        }
+      }
+    },
+    "%lld visible presets" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видимых пресетов: %lld"
+          }
+        }
+      }
+    },
+    "%lld-band equalizer" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эквалайзер на %lld полос"
+          }
+        }
+      }
+    },
+    "+24" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+24"
+          }
+        }
+      }
+    },
+    "−24" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "−24"
+          }
+        }
+      }
+    },
+    "0 dB" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0 дБ"
+          }
+        }
+      }
+    },
+    "1 kHz" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 кГц"
+          }
+        }
+      }
+    },
+    "5" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5"
+          }
+        }
+      }
+    },
+    "8D Mode" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим 8D"
+          }
+        }
+      }
+    },
+    "10" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10"
+          }
+        }
+      }
+    },
+    "16 kHz" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16 кГц"
+          }
+        }
+      }
+    },
+    "20" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20"
+          }
+        }
+      }
+    },
+    "35 Hz" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "35 Гц"
+          }
+        }
+      }
+    },
+    "A soundtrack for every drive." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Музыка для каждой поездки."
+          }
+        }
+      }
+    },
+    "ACTIVE" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ВКЛЮЧЕНО"
+          }
+        }
+      }
+    },
+    "Add music" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить музыку"
+          }
+        }
+      }
+    },
+    "Add Music" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить музыку"
+          }
+        }
+      }
+    },
+    "Add to playlist" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В плейлист"
+          }
+        }
+      }
+    },
+    "Add to Playlist" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В плейлист"
+          }
+        }
+      }
+    },
+    "Add to queue" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В очередь"
+          }
+        }
+      }
+    },
+    "Add to Queue" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В очередь"
+          }
+        }
+      }
+    },
+    "Albums" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Альбомы"
+          }
+        }
+      }
+    },
+    "Albums appear when your files contain album tags." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Альбомы появятся, если в файлах есть соответствующие теги."
+          }
+        }
+      }
+    },
+    "All" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все"
+          }
+        }
+      }
+    },
+    "All playlists" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все плейлисты"
+          }
+        }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оформление"
+          }
+        }
+      }
+    },
+    "Artist" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Исполнитель"
+          }
+        }
+      }
+    },
+    "Artists" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Исполнители"
+          }
+        }
+      }
+    },
+    "Audio engine" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аудиодвижок"
+          }
+        }
+      }
+    },
+    "Audio files and playlist references will be removed. Favorites will also be removed if selected." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аудиофайлы и ссылки на них в плейлистах будут удалены. Избранные треки тоже будут удалены, если они выбраны."
+          }
+        }
+      }
+    },
+    "Auto-save EQ per track" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранять эквалайзер для каждого трека"
+          }
+        }
+      }
+    },
+    "AUX INPUT" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ВХОД AUX"
+          }
+        }
+      }
+    },
+    "AUX, FM transmitter, and W211-focused signal tools." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Инструменты для AUX, FM-трансмиттера и Mercedes W211."
+          }
+        }
+      }
+    },
+    "Backup" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Резервная копия"
+          }
+        }
+      }
+    },
+    "Bands" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Полосы"
+          }
+        }
+      }
+    },
+    "Bass" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бас"
+          }
+        }
+      }
+    },
+    "Bass Heavy" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "С акцентом на бас"
+          }
+        }
+      }
+    },
+    "Bass Lab" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Басовая лаборатория"
+          }
+        }
+      }
+    },
+    "Bass Orbit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Орбита баса"
+          }
+        }
+      }
+    },
+    "Beat Reactive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По ритму"
+          }
+        }
+      }
+    },
+    "BYPASSED" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ОБХОД"
+          }
+        }
+      }
+    },
+    "CABIN" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "САЛОН"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена"
+          }
+        }
+      }
+    },
+    "Car" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автомобиль"
+          }
+        }
+      }
+    },
+    "Change appearance" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить оформление"
+          }
+        }
+      }
+    },
+    "Check your audio library" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверить медиатеку"
+          }
+        }
+      }
+    },
+    "Checks missing files, audio readability, duration and track tags." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверяет наличие файлов, читаемость аудио, длительность и теги треков."
+          }
+        }
+      }
+    },
+    "Choose Playlist" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите плейлист"
+          }
+        }
+      }
+    },
+    "Cinema" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кино"
+          }
+        }
+      }
+    },
+    "Clean" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чистый"
+          }
+        }
+      }
+    },
+    "Clear queued" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить очередь"
+          }
+        }
+      }
+    },
+    "Close player" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть плеер"
+          }
+        }
+      }
+    },
+    "Colors & style" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цвета и стиль"
+          }
+        }
+      }
+    },
+    "Compresses loud passages with gentle makeup gain for quieter listening." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сжимает громкие фрагменты и слегка усиливает тихие для более ровного звучания."
+          }
+        }
+      }
+    },
+    "Copy diagnostic report" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать отчёт диагностики"
+          }
+        }
+      }
+    },
+    "Create" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать"
+          }
+        }
+      }
+    },
+    "Create mix" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать подборку"
+          }
+        }
+      }
+    },
+    "Current track" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Текущий трек"
+          }
+        }
+      }
+    },
+    "Custom" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свои"
+          }
+        }
+      }
+    },
+    "Custom Ambient Color" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свой цвет окружения"
+          }
+        }
+      }
+    },
+    "Custom Layout" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Своя раскладка"
+          }
+        }
+      }
+    },
+    "Cuts deep rumble below the selected frequency (24 dB/octave)." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Срезает низкочастотный гул ниже выбранной частоты (24 дБ/октаву)."
+          }
+        }
+      }
+    },
+    "Default Sort" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сортировка по умолчанию"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить"
+          }
+        }
+      }
+    },
+    "Delete (%lld)" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить (%lld)"
+          }
+        }
+      }
+    },
+    "Delete %lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить %lld"
+          }
+        }
+      }
+    },
+    "Delete All Tracks" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить все треки"
+          }
+        }
+      }
+    },
+    "Delete all tracks?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить все треки?"
+          }
+        }
+      }
+    },
+    "Delete selected tracks (%lld)" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить выбранные треки (%lld)"
+          }
+        }
+      }
+    },
+    "Delete selected tracks?" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить выбранные треки?"
+          }
+        }
+      }
+    },
+    "Developer Tools" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Инструменты разработчика"
+          }
+        }
+      }
+    },
+    "Diagnostic report includes app version, library counts, audio route and sample rate." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отчёт содержит версию приложения, размер медиатеки, аудиовыход и частоту дискретизации."
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        }
+      }
+    },
+    "Drive Mode" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим вождения"
+          }
+        }
+      }
+    },
+    "DSP RACK" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ЦЕПОЧКА DSP"
+          }
+        }
+      }
+    },
+    "Duplicate" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать копию"
+          }
+        }
+      }
+    },
+    "Duplicate groups" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Группы дубликатов"
+          }
+        }
+      }
+    },
+    "Enable equalizer" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить эквалайзер"
+          }
+        }
+      }
+    },
+    "EQ CURVE" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "КРИВАЯ ЭКВАЛАЙЗЕРА"
+          }
+        }
+      }
+    },
+    "Equalizer" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эквалайзер"
+          }
+        }
+      }
+    },
+    "Equalizer curve; adjust individual bands below" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кривая эквалайзера. Настройте отдельные полосы ниже."
+          }
+        }
+      }
+    },
+    "EqualizerCar" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EqualizerCar"
+          }
+        }
+      }
+    },
+    "EQUALIZERCAR" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EQUALIZERCAR"
+          }
+        }
+      }
+    },
+    "Export" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Экспортировать"
+          }
+        }
+      }
+    },
+    "Extra copies" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лишние копии"
+          }
+        }
+      }
+    },
+    "Favorite" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В избранное"
+          }
+        }
+      }
+    },
+    "Favorites" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Избранное"
+          }
+        }
+      }
+    },
+    "Filter type for %lld Hz" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тип фильтра для %lld Гц"
+          }
+        }
+      }
+    },
+    "Find duplicates" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найти дубликаты"
+          }
+        }
+      }
+    },
+    "Flat EQ" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ровный эквалайзер"
+          }
+        }
+      }
+    },
+    "Flush pending library writes" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить ожидающие изменения медиатеки"
+          }
+        }
+      }
+    },
+    "FM Frequency Helper" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подбор FM-частоты"
+          }
+        }
+      }
+    },
+    "Found %lld duplicate copies by file hash. The oldest copy in each group is kept." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найдено дубликатов по хэшу: %lld. В каждой группе останется самый старый трек."
+          }
+        }
+      }
+    },
+    "Front/rear fader requires separate rear output channels; this player processes stereo." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Баланс передних и задних каналов требует отдельных выходов. Плеер обрабатывает стереосигнал."
+          }
+        }
+      }
+    },
+    "Glass Blur %lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Размытие стекла: %lld"
+          }
+        }
+      }
+    },
+    "Glass Opacity %lld%%" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Непрозрачность стекла: %lld%%"
+          }
+        }
+      }
+    },
+    "Guard" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита"
+          }
+        }
+      }
+    },
+    "Guard on" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита включена"
+          }
+        }
+      }
+    },
+    "Headphones" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Наушники"
+          }
+        }
+      }
+    },
+    "Headroom / Loudness" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запас по уровню и громкость"
+          }
+        }
+      }
+    },
+    "Headroom Guard" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита запаса по уровню"
+          }
+        }
+      }
+    },
+    "High Shelf" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Высокая полка"
+          }
+        }
+      }
+    },
+    "High-pass" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильтр высоких частот"
+          }
+        }
+      }
+    },
+    "Home" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Главная"
+          }
+        }
+      }
+    },
+    "Import" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать"
+          }
+        }
+      }
+    },
+    "Importing track..." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт трека…"
+          }
+        }
+      }
+    },
+    "Last operation" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последняя операция"
+          }
+        }
+      }
+    },
+    "Legacy Car" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Старый автомобиль"
+          }
+        }
+      }
+    },
+    "Legacy Car Toolkit" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Инструменты для классических автомобилей"
+          }
+        }
+      }
+    },
+    "Library" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Медиатека"
+          }
+        }
+      }
+    },
+    "Library Cleanup" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистка медиатеки"
+          }
+        }
+      }
+    },
+    "Library health" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Состояние медиатеки"
+          }
+        }
+      }
+    },
+    "Library integrity" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Целостность медиатеки"
+          }
+        }
+      }
+    },
+    "Limiter Active" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лимитер активен"
+          }
+        }
+      }
+    },
+    "Limiter Idle" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лимитер неактивен"
+          }
+        }
+      }
+    },
+    "Listen now" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слушать"
+          }
+        }
+      }
+    },
+    "LOADED" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ЗАГРУЖЕНО"
+          }
+        }
+      }
+    },
+    "Loading library…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка медиатеки…"
+          }
+        }
+      }
+    },
+    "Loud" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Громкий"
+          }
+        }
+      }
+    },
+    "Low Shelf" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Низкая полка"
+          }
+        }
+      }
+    },
+    "Low-pass" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фильтр низких частот"
+          }
+        }
+      }
+    },
+    "MAKE IT YOURS" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "НАСТРОЙТЕ ПОД СЕБЯ"
+          }
+        }
+      }
+    },
+    "Max" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Максимум"
+          }
+        }
+      }
+    },
+    "Missing audio files" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отсутствующие аудиофайлы"
+          }
+        }
+      }
+    },
+    "Mode" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим"
+          }
+        }
+      }
+    },
+    "New" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Создать"
+          }
+        }
+      }
+    },
+    "New Playlist" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый плейлист"
+          }
+        }
+      }
+    },
+    "No Art" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет обложки"
+          }
+        }
+      }
+    },
+    "No Presets" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет пресетов"
+          }
+        }
+      }
+    },
+    "No problems found" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проблем не найдено"
+          }
+        }
+      }
+    },
+    "No unorganized tracks." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет неразобранных треков."
+          }
+        }
+      }
+    },
+    "Not in any playlist and not marked as favorite." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не входят в плейлисты и не добавлены в избранное."
+          }
+        }
+      }
+    },
+    "Notch" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режекторный"
+          }
+        }
+      }
+    },
+    "Now Playing" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сейчас играет"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ОК"
+          }
+        }
+      }
+    },
+    "ON YOUR PLAYER" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В ПЛЕЕРЕ"
+          }
+        }
+      }
+    },
+    "Open No-Look Touch Pad" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть сенсорную панель без взгляда"
+          }
+        }
+      }
+    },
+    "Open Now Playing" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть экран воспроизведения"
+          }
+        }
+      }
+    },
+    "Open player" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть плеер"
+          }
+        }
+      }
+    },
+    "Output" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выход"
+          }
+        }
+      }
+    },
+    "Output %lld%%" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выход: %lld%%"
+          }
+        }
+      }
+    },
+    "Overload" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перегрузка"
+          }
+        }
+      }
+    },
+    "Parametric" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Параметрический"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пауза"
+          }
+        }
+      }
+    },
+    "Paused" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приостановлено"
+          }
+        }
+      }
+    },
+    "Play" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Воспроизвести"
+          }
+        }
+      }
+    },
+    "Play %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Воспроизвести %@"
+          }
+        }
+      }
+    },
+    "Play a collection or add tracks to your queue." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включите подборку или добавьте треки в очередь."
+          }
+        }
+      }
+    },
+    "Playback position" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Позиция воспроизведения"
+          }
+        }
+      }
+    },
+    "Playback queue" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очередь воспроизведения"
+          }
+        }
+      }
+    },
+    "Player" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плеер"
+          }
+        }
+      }
+    },
+    "Playing" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Воспроизведение"
+          }
+        }
+      }
+    },
+    "PLAYING" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ИГРАЕТ"
+          }
+        }
+      }
+    },
+    "Playlist" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плейлист"
+          }
+        }
+      }
+    },
+    "Playlist name" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название плейлиста"
+          }
+        }
+      }
+    },
+    "Playlists" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плейлисты"
+          }
+        }
+      }
+    },
+    "Playlists and shortcuts" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плейлисты и подборки"
+          }
+        }
+      }
+    },
+    "Polarity inversion alone usually sounds unchanged; use it to align a separate subwoofer." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Инверсия фазы сама по себе обычно почти не меняет звук. Используйте её для согласования отдельного сабвуфера."
+          }
+        }
+      }
+    },
+    "Preset" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пресет"
+          }
+        }
+      }
+    },
+    "PRESET" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ПРЕСЕТ"
+          }
+        }
+      }
+    },
+    "Presets" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пресеты"
+          }
+        }
+      }
+    },
+    "Presets and app settings are kept." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пресеты и настройки приложения сохранятся."
+          }
+        }
+      }
+    },
+    "PROFILE BANK" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "БАНК ПРОФИЛЕЙ"
+          }
+        }
+      }
+    },
+    "Queue" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очередь"
+          }
+        }
+      }
+    },
+    "Queue is empty" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очередь пуста"
+          }
+        }
+      }
+    },
+    "Quick Presets" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Быстрые пресеты"
+          }
+        }
+      }
+    },
+    "Read tags again" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перечитать теги"
+          }
+        }
+      }
+    },
+    "Ready" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        }
+      }
+    },
+    "READY" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ГОТОВО"
+          }
+        }
+      }
+    },
+    "Recent" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недавние"
+          }
+        }
+      }
+    },
+    "Reduce a specific resonance without cutting the entire frequency range." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убирает отдельный резонанс, не срезая весь диапазон частот."
+          }
+        }
+      }
+    },
+    "Reduces low-mid muddiness and emphasizes vocal presence." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убирает мутность в нижней середине и подчёркивает вокал."
+          }
+        }
+      }
+    },
+    "Remove from Playlist" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убрать из плейлиста"
+          }
+        }
+      }
+    },
+    "Rename" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переименовать"
+          }
+        }
+      }
+    },
+    "Rename Playlist" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переименовать плейлист"
+          }
+        }
+      }
+    },
+    "Rename Track" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переименовать трек"
+          }
+        }
+      }
+    },
+    "REP %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ПОВТОР %@"
+          }
+        }
+      }
+    },
+    "REP OFF" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ПОВТОР ВЫКЛ."
+          }
+        }
+      }
+    },
+    "Repair duration" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Исправить длительность"
+          }
+        }
+      }
+    },
+    "Repeat" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повтор"
+          }
+        }
+      }
+    },
+    "Repeat: %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повтор: %@"
+          }
+        }
+      }
+    },
+    "Replace file" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заменить файл"
+          }
+        }
+      }
+    },
+    "Report copied" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отчёт скопирован"
+          }
+        }
+      }
+    },
+    "Reset band" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить полосу"
+          }
+        }
+      }
+    },
+    "Reset EQ" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить эквалайзер"
+          }
+        }
+      }
+    },
+    "Restore" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Восстановить"
+          }
+        }
+      }
+    },
+    "RND" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "СЛУЧАЙНО"
+          }
+        }
+      }
+    },
+    "Runtime" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Состояние системы"
+          }
+        }
+      }
+    },
+    "Sample rate" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частота дискретизации"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить"
+          }
+        }
+      }
+    },
+    "Save EQ per track" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранять эквалайзер для каждого трека"
+          }
+        }
+      }
+    },
+    "Scan" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверить"
+          }
+        }
+      }
+    },
+    "Scan & clean library" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверка и очистка медиатеки"
+          }
+        }
+      }
+    },
+    "Scan for hash duplicates" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найти дубликаты по хэшу"
+          }
+        }
+      }
+    },
+    "Scanning audio hashes…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверка хэшей аудиофайлов…"
+          }
+        }
+      }
+    },
+    "Scanning library…" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверка медиатеки…"
+          }
+        }
+      }
+    },
+    "Select" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать"
+          }
+        }
+      }
+    },
+    "Select all unorganized" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать все неразобранные"
+          }
+        }
+      }
+    },
+    "Select visible" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать видимые"
+          }
+        }
+      }
+    },
+    "SEQ" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ПО ПОРЯДКУ"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки"
+          }
+        }
+      }
+    },
+    "Shape drum attack and sustain. Positive values emphasize; negative values soften." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настраивает атаку и затухание ударных. Положительные значения подчёркивают атаку, отрицательные смягчают её."
+          }
+        }
+      }
+    },
+    "Shape your sound" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройте звучание"
+          }
+        }
+      }
+    },
+    "Share track" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поделиться треком"
+          }
+        }
+      }
+    },
+    "Shuffle" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перемешать"
+          }
+        }
+      }
+    },
+    "Signal chain modules" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Модули цепочки обработки"
+          }
+        }
+      }
+    },
+    "Smart Mode" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Умный режим"
+          }
+        }
+      }
+    },
+    "Songs" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Песни"
+          }
+        }
+      }
+    },
+    "Songs, artists, playlists" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Треки, исполнители, плейлисты"
+          }
+        }
+      }
+    },
+    "Sort" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сортировка"
+          }
+        }
+      }
+    },
+    "Speakers" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Колонки"
+          }
+        }
+      }
+    },
+    "Spectrum" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спектр"
+          }
+        }
+      }
+    },
+    "STANDBY" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ОЖИДАНИЕ"
+          }
+        }
+      }
+    },
+    "Storage & reports" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хранилище и отчёты"
+          }
+        }
+      }
+    },
+    "SUB" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "САБВУФЕР"
+          }
+        }
+      }
+    },
+    "Subsonic-фильтр убирает инфранизкий сигнал, который расходует запас хода динамика без заметного баса." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сабсоник-фильтр убирает инфранизкий сигнал, который расходует ход динамика, почти не добавляя слышимого баса."
+          }
+        }
+      }
+    },
+    "Subwoofer" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сабвуфер"
+          }
+        }
+      }
+    },
+    "Swipe for more bands" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проведите пальцем, чтобы увидеть остальные полосы"
+          }
+        }
+      }
+    },
+    "Tape-style soft saturation. Drive adds harmonics; Mix blends the original signal." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мягкая ленточная сатурация. Параметр «Насыщение» добавляет гармоники, а «Смесь» смешивает эффект с исходным сигналом."
+          }
+        }
+      }
+    },
+    "The selected audio files will be removed from the library and its playlists." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранные аудиофайлы будут удалены из медиатеки и плейлистов."
+          }
+        }
+      }
+    },
+    "This removes every imported audio file from the app library and clears playlists. Presets are kept." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалятся все импортированные аудиофайлы и очистятся плейлисты. Пресеты сохранятся."
+          }
+        }
+      }
+    },
+    "Track actions" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Действия с треком"
+          }
+        }
+      }
+    },
+    "Track title" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название трека"
+          }
+        }
+      }
+    },
+    "Tracks" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Треки"
+          }
+        }
+      }
+    },
+    "Two-finger swipe" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смахивание двумя пальцами"
+          }
+        }
+      }
+    },
+    "Unorganized tracks" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неразобранные треки"
+          }
+        }
+      }
+    },
+    "Up next" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Далее"
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия %@"
+          }
+        }
+      }
+    },
+    "Vocal" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вокал"
+          }
+        }
+      }
+    },
+    "Vocal Center" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вокал в центре"
+          }
+        }
+      }
+    },
+    "VOL %lld" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ГРОМКОСТЬ %lld"
+          }
+        }
+      }
+    },
+    "Volume" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Громкость"
+          }
+        }
+      }
+    },
+    "Volume / Clipping" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Громкость и клиппинг"
+          }
+        }
+      }
+    },
+    "W211 & Legacy Profiles" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Профили W211 и классических автомобилей"
+          }
+        }
+      }
+    },
+    "Waveform" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Волновая форма"
+          }
+        }
+      }
+    },
+    "Wide Air" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Широкое пространство"
+          }
+        }
+      }
+    },
+    "Width needs stereo material. Spatial Depth and Stereo 3D also add width to mono; stereo speakers or headphones are needed to hear it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для расширения стереобазы нужен стереосигнал. Пространственная глубина и Stereo 3D расширяют и моносигнал; эффект слышен в стереоколонках или наушниках."
+          }
+        }
+      }
+    },
+    "Your first playlist" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш первый плейлист"
+          }
+        }
+      }
+    },
+    "Your music. Your sound." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша музыка. Ваше звучание."
+          }
+        }
+      }
+    },
+    "Your personal soundtrack" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш личный саундтрек."
+          }
+        }
+      }
+    },
+    "Адаптивный режим уменьшает усиление при высоком уровне сигнала." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адаптивный режим уменьшает усиление при высоком уровне сигнала."
+          }
+        }
+      }
+    },
+    "АКТИВЕН" : {
+
+    },
+    "БИБЛИОТЕКА ПРЕСЕТОВ" : {
+
+    },
+    "Ваш первый плейлист" : {
+
+    },
+    "Включён" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включён"
+          }
+        }
+      }
+    },
+    "Воспроизвести %@" : {
+
+    },
+    "Все плейлисты" : {
+
+    },
+    "Выбрано" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрано"
+          }
+        }
+      }
+    },
+    "Выключен" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выключен"
+          }
+        }
+      }
+    },
+    "Дневная — светлая и контрастная. Ночная — мягкая графитовая. Системная меняется вместе с iPhone." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дневная тема светлая и контрастная, ночная — мягкая графитовая. Системная меняется вместе с iPhone."
+          }
+        }
+      }
+    },
+    "Импорт музыки" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт музыки"
+          }
+        }
+      }
+    },
+    "Импортировать (%lld)" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать (%lld)"
+          }
+        }
+      }
+    },
+    "Медиатека" : {
+
+    },
+    "Музыка для каждой поездки." : {
+
+    },
+    "Название пресета" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название пресета"
+          }
+        }
+      }
+    },
+    "Настроить акценты" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настроить акценты"
+          }
+        }
+      }
+    },
+    "Не удалось воспроизвести" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось воспроизвести"
+          }
+        }
+      }
+    },
+    "Отмена" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена"
+          }
+        }
+      }
+    },
+    "Оформление" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оформление"
+          }
+        }
+      }
+    },
+    "ПОВТ. %@" : {
+
+    },
+    "ПОВТ. ВЫКЛ." : {
+
+    },
+    "Повтор: %@" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повтор: %@"
+          }
+        }
+      }
+    },
+    "Прогресс воспроизведения" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прогресс воспроизведения"
+          }
+        }
+      }
+    },
+    "Развёрнуто" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Развёрнуто"
+          }
+        }
+      }
+    },
+    "Размер" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Размер"
+          }
+        }
+      }
+    },
+    "Свёрнуто" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свёрнуто"
+          }
+        }
+      }
+    },
+    "Сводка" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сводка"
+          }
+        }
+      }
+    },
+    "Сохранить" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить"
+          }
+        }
+      }
+    },
+    "Сохранить пресет" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить пресет"
+          }
+        }
+      }
+    },
+    "Тема" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тема"
+          }
+        }
+      }
+    },
+    "Треков: %lld" : {
+
+    },
+    "Треков: %lld • Плейлистов: %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Треков: %1$lld • Плейлистов: %2$lld"
+          }
+        }
+      }
+    },
+    "Файлы" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файлы"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

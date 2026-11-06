@@ -74,6 +74,20 @@ enum PresetCategory: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
+    var localizedTitle: String {
+        switch self {
+        case .all: return "Все"
+        case .bass: return "Бас"
+        case .vocal: return "Вокал"
+        case .car: return "Автомобиль"
+        case .headphones: return "Наушники"
+        case .eightD: return "8D"
+        case .cinema: return "Кино"
+        case .loud: return "Громкость"
+        case .custom: return "Свои"
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .all:
@@ -133,6 +147,17 @@ enum EQBandFilterType: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
+    var localizedTitle: String {
+        switch self {
+        case .parametric: return "Параметрический"
+        case .lowShelf: return "Низкая полка"
+        case .highShelf: return "Высокая полка"
+        case .notch: return "Режекторный"
+        case .highPass: return "Фильтр высоких частот"
+        case .lowPass: return "Фильтр низких частот"
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .parametric:
@@ -158,6 +183,15 @@ enum EightDAudioMode: String, Codable, CaseIterable, Identifiable, Sendable {
     case wideAir = "Wide Air"
 
     var id: String { rawValue }
+
+    var localizedTitle: String {
+        switch self {
+        case .beatReactive: return "По ритму"
+        case .vocalCenter: return "Вокал в центре"
+        case .bassOrbit: return "Орбита баса"
+        case .wideAir: return "Широкое пространство"
+        }
+    }
 }
 
 enum SmartLoudBassMode: String, Codable, CaseIterable, Identifiable, Sendable {
@@ -167,6 +201,15 @@ enum SmartLoudBassMode: String, Codable, CaseIterable, Identifiable, Sendable {
     case max = "Max"
 
     var id: String { rawValue }
+
+    var localizedTitle: String {
+        switch self {
+        case .clean: return "Чистый"
+        case .loud: return "Громкий"
+        case .bassHeavy: return "С акцентом на бас"
+        case .max: return "Максимум"
+        }
+    }
 }
 
 struct PresetEffectSettings: Codable, Equatable, Sendable {
@@ -176,7 +219,7 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
     var bassBoostIntensity: Float = 8
     var bassBoostFrequency: Float = 80
     var virtualSubwooferEnabled: Bool = false
-    var virtualSubwooferMix: Float = 0
+    var virtualSubwooferMix: Float = 0.5
     var virtualSubwooferCutoff: Float = 55
     var cabinNotchEnabled: Bool = false
     var cabinNotchFrequency: Float = 135
@@ -208,7 +251,7 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
     var outputGain: Float = 0.90
     var volumeBoost: Float = 1
     var auxSignalBoostEnabled: Bool = false
-    var auxSignalBoostDB: Float = 0
+    var auxSignalBoostDB: Float = 3
     var fmExciterEnabled: Bool = false
     var fmExciterIntensity: Float = 0.35
     var groundLoopSuppressorEnabled: Bool = false
@@ -216,7 +259,7 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
     var engineNoiseNotchEnabled: Bool = false
     var engineNoiseFrequency: Float = 120
     var stereoCollapseEnabled: Bool = false
-    var stereoCollapseWidth: Float = 1
+    var stereoCollapseWidth: Float = 0.35
     var clipperProtectionEnabled: Bool = true
     var logic7SpatializerEnabled: Bool = false
     var logic7Ambience: Float = 0.35
@@ -235,7 +278,42 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
     var subwooferModeEnabled: Bool = false
     var bassMonoBelow100Enabled: Bool = false
 
+    var parametricNotchEnabled: Bool = false
+    var parametricNotchFrequency: Float = 1000
+    var parametricNotchQ: Float = 4
+    var parametricNotchDepth: Float = -12
+    var subsonicEnabled: Bool = false
+    var subsonicCutoff: Float = 30
+    var vocalClarityEnabled: Bool = false
+    var vocalClarityAmount: Float = 0.5
+    var nightModeEnabled: Bool = false
+    var nightModeAmount: Float = 0.5
+    var tapeSaturationEnabled: Bool = false
+    var tapeSaturationDrive: Float = 0.35
+    var tapeSaturationMix: Float = 0.65
+    var transientShaperEnabled: Bool = false
+    var transientAttack: Float = 6
+    var transientSustain: Float = -3
+    var softClipperDrive: Float = 0.35
+
     private enum CodingKeys: String, CodingKey {
+        case parametricNotchEnabled
+        case parametricNotchFrequency
+        case parametricNotchQ
+        case parametricNotchDepth
+        case subsonicEnabled
+        case subsonicCutoff
+        case vocalClarityEnabled
+        case vocalClarityAmount
+        case nightModeEnabled
+        case nightModeAmount
+        case tapeSaturationEnabled
+        case tapeSaturationDrive
+        case tapeSaturationMix
+        case transientShaperEnabled
+        case transientAttack
+        case transientSustain
+        case softClipperDrive
         case bassBoostEnabled
         case trebleBoostEnabled
         case loudnessEnabled
@@ -309,7 +387,7 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         bassBoostIntensity: Float = 8,
         bassBoostFrequency: Float = 80,
         virtualSubwooferEnabled: Bool = false,
-        virtualSubwooferMix: Float = 0,
+        virtualSubwooferMix: Float = 0.5,
         virtualSubwooferCutoff: Float = 55,
         cabinNotchEnabled: Bool = false,
         cabinNotchFrequency: Float = 135,
@@ -341,7 +419,7 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         outputGain: Float = 0.90,
         volumeBoost: Float = 1,
         auxSignalBoostEnabled: Bool = false,
-        auxSignalBoostDB: Float = 0,
+        auxSignalBoostDB: Float = 3,
         fmExciterEnabled: Bool = false,
         fmExciterIntensity: Float = 0.35,
         groundLoopSuppressorEnabled: Bool = false,
@@ -349,7 +427,7 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         engineNoiseNotchEnabled: Bool = false,
         engineNoiseFrequency: Float = 120,
         stereoCollapseEnabled: Bool = false,
-        stereoCollapseWidth: Float = 1,
+        stereoCollapseWidth: Float = 0.35,
         clipperProtectionEnabled: Bool = true,
         logic7SpatializerEnabled: Bool = false,
         logic7Ambience: Float = 0.35,
@@ -366,8 +444,42 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
         warmthGain: Float = 0,
         bassTightness: Float = 0.5,
         subwooferModeEnabled: Bool = false,
-        bassMonoBelow100Enabled: Bool = false
+        bassMonoBelow100Enabled: Bool = false,
+        parametricNotchEnabled: Bool = false,
+        parametricNotchFrequency: Float = 1000,
+        parametricNotchQ: Float = 4,
+        parametricNotchDepth: Float = -12,
+        subsonicEnabled: Bool = false,
+        subsonicCutoff: Float = 30,
+        vocalClarityEnabled: Bool = false,
+        vocalClarityAmount: Float = 0.5,
+        nightModeEnabled: Bool = false,
+        nightModeAmount: Float = 0.5,
+        tapeSaturationEnabled: Bool = false,
+        tapeSaturationDrive: Float = 0.35,
+        tapeSaturationMix: Float = 0.65,
+        transientShaperEnabled: Bool = false,
+        transientAttack: Float = 6,
+        transientSustain: Float = -3,
+        softClipperDrive: Float = 0.35
     ) {
+        self.parametricNotchEnabled = parametricNotchEnabled
+        self.parametricNotchFrequency = parametricNotchFrequency
+        self.parametricNotchQ = parametricNotchQ
+        self.parametricNotchDepth = parametricNotchDepth
+        self.subsonicEnabled = subsonicEnabled
+        self.subsonicCutoff = subsonicCutoff
+        self.vocalClarityEnabled = vocalClarityEnabled
+        self.vocalClarityAmount = vocalClarityAmount
+        self.nightModeEnabled = nightModeEnabled
+        self.nightModeAmount = nightModeAmount
+        self.tapeSaturationEnabled = tapeSaturationEnabled
+        self.tapeSaturationDrive = tapeSaturationDrive
+        self.tapeSaturationMix = tapeSaturationMix
+        self.transientShaperEnabled = transientShaperEnabled
+        self.transientAttack = transientAttack
+        self.transientSustain = transientSustain
+        self.softClipperDrive = softClipperDrive
         self.bassBoostIntensity = bassBoostIntensity
         self.bassBoostFrequency = bassBoostFrequency
         self.bassBoostEnabled = bassBoostEnabled
@@ -436,6 +548,23 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
 
     nonisolated init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        parametricNotchEnabled = try container.decodeIfPresent(Bool.self, forKey: .parametricNotchEnabled) ?? false
+        parametricNotchFrequency = try container.decodeIfPresent(Float.self, forKey: .parametricNotchFrequency) ?? 1000
+        parametricNotchQ = try container.decodeIfPresent(Float.self, forKey: .parametricNotchQ) ?? 4
+        parametricNotchDepth = try container.decodeIfPresent(Float.self, forKey: .parametricNotchDepth) ?? -12
+        subsonicEnabled = try container.decodeIfPresent(Bool.self, forKey: .subsonicEnabled) ?? false
+        subsonicCutoff = try container.decodeIfPresent(Float.self, forKey: .subsonicCutoff) ?? 30
+        vocalClarityEnabled = try container.decodeIfPresent(Bool.self, forKey: .vocalClarityEnabled) ?? false
+        vocalClarityAmount = try container.decodeIfPresent(Float.self, forKey: .vocalClarityAmount) ?? 0.5
+        nightModeEnabled = try container.decodeIfPresent(Bool.self, forKey: .nightModeEnabled) ?? false
+        nightModeAmount = try container.decodeIfPresent(Float.self, forKey: .nightModeAmount) ?? 0.5
+        tapeSaturationEnabled = try container.decodeIfPresent(Bool.self, forKey: .tapeSaturationEnabled) ?? false
+        tapeSaturationDrive = try container.decodeIfPresent(Float.self, forKey: .tapeSaturationDrive) ?? 0.35
+        tapeSaturationMix = try container.decodeIfPresent(Float.self, forKey: .tapeSaturationMix) ?? 0.65
+        transientShaperEnabled = try container.decodeIfPresent(Bool.self, forKey: .transientShaperEnabled) ?? false
+        transientAttack = try container.decodeIfPresent(Float.self, forKey: .transientAttack) ?? 6
+        transientSustain = try container.decodeIfPresent(Float.self, forKey: .transientSustain) ?? -3
+        softClipperDrive = try container.decodeIfPresent(Float.self, forKey: .softClipperDrive) ?? 0.35
         bassBoostEnabled = try container.decodeIfPresent(Bool.self, forKey: .bassBoostEnabled) ?? false
         bassBoostIntensity = try container.decodeIfPresent(Float.self, forKey: .bassBoostIntensity) ?? 8
         bassBoostFrequency = try container.decodeIfPresent(Float.self, forKey: .bassBoostFrequency) ?? 80
@@ -504,6 +633,23 @@ struct PresetEffectSettings: Codable, Equatable, Sendable {
 
     nonisolated func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(parametricNotchEnabled, forKey: .parametricNotchEnabled)
+        try container.encode(parametricNotchFrequency, forKey: .parametricNotchFrequency)
+        try container.encode(parametricNotchQ, forKey: .parametricNotchQ)
+        try container.encode(parametricNotchDepth, forKey: .parametricNotchDepth)
+        try container.encode(subsonicEnabled, forKey: .subsonicEnabled)
+        try container.encode(subsonicCutoff, forKey: .subsonicCutoff)
+        try container.encode(vocalClarityEnabled, forKey: .vocalClarityEnabled)
+        try container.encode(vocalClarityAmount, forKey: .vocalClarityAmount)
+        try container.encode(nightModeEnabled, forKey: .nightModeEnabled)
+        try container.encode(nightModeAmount, forKey: .nightModeAmount)
+        try container.encode(tapeSaturationEnabled, forKey: .tapeSaturationEnabled)
+        try container.encode(tapeSaturationDrive, forKey: .tapeSaturationDrive)
+        try container.encode(tapeSaturationMix, forKey: .tapeSaturationMix)
+        try container.encode(transientShaperEnabled, forKey: .transientShaperEnabled)
+        try container.encode(transientAttack, forKey: .transientAttack)
+        try container.encode(transientSustain, forKey: .transientSustain)
+        try container.encode(softClipperDrive, forKey: .softClipperDrive)
         try container.encode(bassBoostEnabled, forKey: .bassBoostEnabled)
         try container.encode(trebleBoostEnabled, forKey: .trebleBoostEnabled)
         try container.encode(loudnessEnabled, forKey: .loudnessEnabled)

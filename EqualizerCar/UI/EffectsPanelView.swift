@@ -3,10 +3,12 @@ import SwiftUI
 struct EffectsPanelView: View {
     @ObservedObject var audioManager: AudioEngineManager
     @Environment(\.carAmbientTheme) private var theme
+    @State private var lastReverbMix: Float = 25
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             rackHeader
+            newEffectsModule
             smartChainModule
             legacyCarModule
             LoudnessMeterView(audioManager: audioManager)
@@ -22,7 +24,8 @@ struct EffectsPanelView: View {
                 toggleRow("Treble Boost", icon: "hifispeaker.2.fill", isOn: $audioManager.trebleBoostEnabled)
                 toggleRow("Loudness", icon: "speaker.plus.fill", isOn: $audioManager.loudnessEnabled)
                 valueSlider(title: "Balance", value: $audioManager.stereoBalance, range: -1...1, step: 0.01) { "\(Int(($0 + 1) * 50))%" }
-                valueSlider(title: "Fader", value: $audioManager.frontRearFader, range: -1...1, step: 0.01) { "\(Int(($0 + 1) * 50))%" }
+                Text("Front/rear fader requires separate rear output channels; this player processes stereo.")
+                    .font(.caption).foregroundStyle(theme.mutedInk)
             }
 
             rackModule(title: "Gain Stage", icon: "gauge.with.dots.needle.67percent", isActive: audioManager.inputGain != 1 || audioManager.outputGain != 1 || audioManager.volumeBoost != 1) {
@@ -61,6 +64,8 @@ struct EffectsPanelView: View {
                 valueSlider(title: "Release", value: $audioManager.limiterRelease, range: 0.010...0.500, step: 0.01, formatter: secondsText)
                     .disabled(!audioManager.limiterEnabled)
                 toggleRow("Soft Clipper", icon: "scissors", isOn: $audioManager.softClipperEnabled)
+                valueSlider(title: "Clip Drive", value: $audioManager.softClipperDrive, range: 0...1, step: 0.01, formatter: percentText)
+                    .disabled(!audioManager.softClipperEnabled)
             }
 
             rackModule(title: "Cabin Space", icon: "car.fill", isActive: audioManager.crossoverEnabled || audioManager.stereoWideningEnabled || audioManager.spatialAudioEnabled || audioManager.surroundEnabled || audioManager.eightDAudioEnabled) {
@@ -72,17 +77,21 @@ struct EffectsPanelView: View {
                         Text("Speakers").tag(CrossoverMode.speakers)
                     }
                     .pickerStyle(.segmented)
-                    toggleRow("Invert Sub Phase", icon: "arrow.left.arrow.right", isOn: $audioManager.subwooferPhaseInverted)
+                toggleRow("Invert Sub Phase", icon: "arrow.left.arrow.right", isOn: $audioManager.subwooferPhaseInverted)
+                    Text("Polarity inversion alone usually sounds unchanged; use it to align a separate subwoofer.")
+                        .font(.caption).foregroundStyle(theme.mutedInk)
                 }
 
                 effectSlider(title: "Stereo Width", icon: "arrow.left.and.right", isEnabled: $audioManager.stereoWideningEnabled, value: $audioManager.stereoWideningIntensity)
+                Text("Width needs stereo material. Spatial Depth and Stereo 3D also add width to mono; stereo speakers or headphones are needed to hear it.")
+                    .font(.caption).foregroundStyle(theme.mutedInk)
                 effectSlider(title: "Spatial Depth", icon: "circle.hexagongrid.fill", isEnabled: $audioManager.spatialAudioEnabled, value: $audioManager.spatialAudioDepth)
                 effectSlider(title: "Surround", icon: "dot.radiowaves.left.and.right", isEnabled: $audioManager.surroundEnabled, value: $audioManager.surroundAmount)
 
                 toggleRow("8D Audio", icon: "rotate.3d", isOn: $audioManager.eightDAudioEnabled)
                 Picker("8D Mode", selection: $audioManager.eightDAudioMode) {
                     ForEach(EightDAudioMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Text(mode.localizedTitle).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -90,14 +99,81 @@ struct EffectsPanelView: View {
                 eightDMotionView
                 valueSlider(title: "8D Intensity", value: $audioManager.eightDAudioIntensity, range: 0...1, step: 0.05, formatter: percentText)
                     .disabled(!audioManager.eightDAudioEnabled)
-                valueSlider(title: "8D Speed", value: $audioManager.eightDAudioSpeed, range: 0.03...0.75, step: 0.01) { "\(String(format: "%.2f", $0))x" }
+                valueSlider(title: "8D Speed", value: $audioManager.eightDAudioSpeed, range: 0.03...0.75, step: 0.01) { "\(String(format: "%.2f", $0)) Hz" }
                     .disabled(!audioManager.eightDAudioEnabled)
 
                 Divider().overlay(theme.accent.opacity(0.18))
 
+                toggleRow("Reverb", icon: "waveform", isOn: Binding(
+                    get: { audioManager.reverbAmount > 0 },
+                    set: { enabled in
+                        if enabled {
+                            audioManager.reverbAmount = lastReverbMix
+                        } else {
+                            lastReverbMix = max(audioManager.reverbAmount, 1)
+                            audioManager.reverbAmount = 0
+                        }
+                    }
+                ))
                 valueSlider(title: "Reverb Mix", value: $audioManager.reverbAmount, range: 0...100, step: 1) { "\(Int($0))%" }
                 valueSlider(title: "Room Size", value: $audioManager.reverbSize, range: 0...1, step: 0.05, formatter: percentText)
                 valueSlider(title: "Damping", value: $audioManager.reverbDamping, range: 0...1, step: 0.05, formatter: percentText)
+            }
+        }
+    }
+
+    private var newEffectsModule: some View {
+        VStack(spacing: 14) {
+            rackModule(title: "Subsonic Filter", icon: "waveform", isActive: audioManager.subsonicEnabled) {
+                toggleRow("Enable Subsonic Filter", icon: "waveform", isOn: $audioManager.subsonicEnabled)
+                Text("Cuts deep rumble below the selected frequency (24 dB/octave).").font(.caption).foregroundStyle(theme.mutedInk)
+                valueSlider(title: "Cutoff", value: $audioManager.subsonicCutoff, range: 20...60, step: 1) { "\(Int($0)) Hz" }
+                    .disabled(!audioManager.subsonicEnabled)
+            }
+            rackModule(title: "Vocal Clarity", icon: "waveform", isActive: audioManager.vocalClarityEnabled) {
+                toggleRow("Enable Vocal Clarity", icon: "waveform", isOn: $audioManager.vocalClarityEnabled)
+                Text("Reduces low-mid muddiness and emphasizes vocal presence.").font(.caption).foregroundStyle(theme.mutedInk)
+                valueSlider(title: "Amount", value: $audioManager.vocalClarityAmount, range: 0...1, step: 0.01, formatter: percentText)
+                    .disabled(!audioManager.vocalClarityEnabled)
+            }
+            rackModule(title: "Night Mode", icon: "waveform", isActive: audioManager.nightModeEnabled) {
+                toggleRow("Enable Night Mode", icon: "waveform", isOn: $audioManager.nightModeEnabled)
+                Text("Compresses loud passages with gentle makeup gain for quieter listening.").font(.caption).foregroundStyle(theme.mutedInk)
+                valueSlider(title: "Amount", value: $audioManager.nightModeAmount, range: 0...1, step: 0.01, formatter: percentText)
+                    .disabled(!audioManager.nightModeEnabled)
+            }
+            rackModule(title: "Parametric Notch", icon: "waveform.path.ecg", isActive: audioManager.parametricNotchEnabled) {
+                toggleRow("Enable Notch", icon: "line.3.horizontal.decrease", isOn: $audioManager.parametricNotchEnabled)
+                Text("Reduce a specific resonance without cutting the entire frequency range.")
+                    .font(.caption).foregroundStyle(theme.mutedInk)
+                // A logarithmic scale gives the low-frequency range usable precision.
+                valueSlider(title: "Frequency", value: Binding(
+                    get: { log10(audioManager.parametricNotchFrequency) },
+                    set: { audioManager.parametricNotchFrequency = pow(10, $0) }
+                ), range: log10(20)...log10(20_000), step: 0.005) { "\(Int(pow(10, $0))) Hz" }
+                    .disabled(!audioManager.parametricNotchEnabled)
+                valueSlider(title: "Q", value: $audioManager.parametricNotchQ, range: 0.3...20, step: 0.1) { String(format: "%.1f", $0) }
+                    .disabled(!audioManager.parametricNotchEnabled)
+                valueSlider(title: "Cut", value: $audioManager.parametricNotchDepth, range: -36...0, step: 0.5, formatter: dbText)
+                    .disabled(!audioManager.parametricNotchEnabled)
+            }
+            rackModule(title: "Tape Saturation", icon: "waveform", isActive: audioManager.tapeSaturationEnabled) {
+                toggleRow("Enable Saturation", icon: "waveform", isOn: $audioManager.tapeSaturationEnabled)
+                Text("Tape-style soft saturation. Drive adds harmonics; Mix blends the original signal.")
+                    .font(.caption).foregroundStyle(theme.mutedInk)
+                valueSlider(title: "Drive", value: $audioManager.tapeSaturationDrive, range: 0...1, step: 0.01, formatter: percentText)
+                    .disabled(!audioManager.tapeSaturationEnabled)
+                valueSlider(title: "Mix", value: $audioManager.tapeSaturationMix, range: 0...1, step: 0.01, formatter: percentText)
+                    .disabled(!audioManager.tapeSaturationEnabled)
+            }
+            rackModule(title: "Transient Shaper", icon: "waveform.path", isActive: audioManager.transientShaperEnabled) {
+                toggleRow("Enable Transients", icon: "waveform.path", isOn: $audioManager.transientShaperEnabled)
+                Text("Shape drum attack and sustain. Positive values emphasize; negative values soften.")
+                    .font(.caption).foregroundStyle(theme.mutedInk)
+                valueSlider(title: "Attack", value: $audioManager.transientAttack, range: -12...12, step: 0.5, formatter: dbText)
+                    .disabled(!audioManager.transientShaperEnabled)
+                valueSlider(title: "Sustain", value: $audioManager.transientSustain, range: -12...12, step: 0.5, formatter: dbText)
+                    .disabled(!audioManager.transientShaperEnabled)
             }
         }
     }
@@ -134,14 +210,14 @@ struct EffectsPanelView: View {
                 set: { audioManager.applySmartLoudBassMode($0) }
             )) {
                 ForEach(SmartLoudBassMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.localizedTitle).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
 
             HStack(spacing: 8) {
                 ForEach(["Input", "Dynamic EQ", "Bass", "Multiband", "Clip", "Width", "Limiter", "Output"], id: \.self) { item in
-                    Text(item)
+                    Text(LocalizedStringKey(item))
                         .font(.caption2.weight(.bold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -195,7 +271,7 @@ struct EffectsPanelView: View {
             toggleRow("Stereo Collapse", icon: "arrow.left.and.right.circle", isOn: $audioManager.stereoCollapseEnabled)
             valueSlider(title: "Width", value: $audioManager.stereoCollapseWidth, range: 0...1, step: 0.05, formatter: percentText)
                 .disabled(!audioManager.stereoCollapseEnabled)
-            toggleRow("Stereo3D Logic 7", icon: "car.2.fill", isOn: $audioManager.logic7SpatializerEnabled)
+            toggleRow("Stereo3D", icon: "car.2.fill", isOn: $audioManager.logic7SpatializerEnabled)
             valueSlider(title: "Ambience", value: $audioManager.logic7Ambience, range: 0...1, step: 0.05, formatter: percentText)
                 .disabled(!audioManager.logic7SpatializerEnabled)
             valueSlider(title: "Center", value: $audioManager.logic7CenterFocus, range: 0...1, step: 0.05, formatter: percentText)
@@ -204,41 +280,13 @@ struct EffectsPanelView: View {
         }
     }
 
-    private func rackModule<Content: View>(title: String, icon: String, isActive: Bool, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .foregroundStyle(isActive ? theme.secondaryAccent : theme.mutedInk)
-                    .frame(width: 28, height: 28)
-                    .background(Color.black.opacity(0.04))
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-
-                Text(title.uppercased())
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(theme.ink)
-
-                Spacer()
-
-                Text(isActive ? "ACTIVE" : "BYPASS")
-                    .font(.caption2.monospaced().weight(.bold))
-                    .foregroundStyle(isActive ? theme.secondaryAccent : theme.mutedInk)
-            }
-
-            content()
-        }
-        .padding(14)
-        .background(theme.surface.opacity(0.96))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(isActive ? theme.secondaryAccent.opacity(0.34) : theme.accent.opacity(0.18), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
+    private func rackModule<Content: View>(title: String, icon: String, isActive: Bool, @ViewBuilder content: @escaping () -> Content) -> some View {
+        EffectModuleCard(title: title, icon: icon, isActive: isActive, content: content)
     }
 
     private func toggleRow(_ title: String, icon: String, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
-            Label(title, systemImage: icon)
+            Label(LocalizedStringKey(title), systemImage: icon)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(theme.ink)
         }
@@ -262,7 +310,7 @@ struct EffectsPanelView: View {
         formatter: @escaping (Float) -> String
     ) -> some View {
         HStack(spacing: 10) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.mutedInk)
                 .frame(width: 92, alignment: .leading)
@@ -285,7 +333,7 @@ struct EffectsPanelView: View {
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.black.opacity(0.04))
+                    .fill(theme.surface)
                     .overlay(Capsule().stroke(theme.accent.opacity(0.18), lineWidth: 1))
 
                 Capsule()
@@ -331,5 +379,47 @@ struct EffectsPanelView: View {
 
     private func secondsText(_ value: Float) -> String {
         value < 1 ? "\(Int(value * 1_000)) ms" : "\(String(format: "%.2f", value)) s"
+    }
+}
+
+private struct EffectModuleCard<Content: View>: View {
+    @Environment(\.carAmbientTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var expanded: Bool
+    let title: String
+    let icon: String
+    let isActive: Bool
+    let content: () -> Content
+
+    init(title: String, icon: String, isActive: Bool, @ViewBuilder content: @escaping () -> Content) {
+        self.title = title; self.icon = icon; self.isActive = isActive; self.content = content
+        _expanded = State(initialValue: title == "Tone Shaper")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { expanded.toggle() }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: icon).frame(width: 24).foregroundStyle(isActive ? theme.accent : theme.mutedInk)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(LocalizedStringKey(title)).font(.subheadline.weight(.semibold)).foregroundStyle(theme.ink)
+                        Text(isActive ? "Включён" : "Выключен").font(.caption).foregroundStyle(isActive ? theme.accent : theme.mutedInk)
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down").font(.caption.weight(.semibold))
+                        .rotationEffect(.degrees(expanded ? 180 : 0)).foregroundStyle(theme.mutedInk)
+                }
+                .padding(16).frame(minHeight: 64).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(expanded ? "Развёрнуто" : "Свёрнуто")
+            if expanded {
+                VStack(alignment: .leading, spacing: 14, content: content)
+                    .padding(.horizontal, 16).padding(.bottom, 16)
+            }
+        }
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 14))
     }
 }

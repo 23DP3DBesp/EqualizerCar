@@ -6,6 +6,7 @@ struct MiniPlayerBar: View {
     @ObservedObject var presetManager: PresetManager
     @Environment(\.carAmbientTheme) private var theme
     @State private var showNowPlaying = false
+    var openPlayer: (() -> Void)? = nil
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -23,18 +24,13 @@ struct MiniPlayerBar: View {
                     playButton
                     control("Next", icon: "forward.fill") { library.playNext(audioManager: audioManager) }
                 }
-                PlaybackProgressView(audioManager: audioManager)
-                HStack {
-                    control("Shuffle", icon: "shuffle", active: library.isShuffleEnabled) { library.isShuffleEnabled.toggle() }
-                    control("Previous", icon: "backward.fill") { library.playPrevious(audioManager: audioManager) }
-                    repeatButton
-                    Spacer(minLength: 8)
-                    volume.frame(maxWidth: 140)
-                }
+                ProgressView(value: min(max(audioManager.currentTime, 0), max(audioManager.duration, 0.01)), total: max(audioManager.duration, 0.01))
+                    .tint(theme.accent)
+                    .accessibilityLabel("Прогресс воспроизведения")
             }.padding(.horizontal, 16).padding(.vertical, 8)
         }
-        .background(Color.white)
-        .overlay(alignment: .top) { Rectangle().fill(Color.black.opacity(0.08)).frame(height: 1) }
+        .background(theme.surface, in: RoundedRectangle(cornerRadius: 24))
+        .padding(.horizontal, 12).padding(.top, 8)
         .fullScreenCover(isPresented: $showNowPlaying) {
             NowPlayingView(audioManager: audioManager, library: library, presetManager: presetManager)
         }
@@ -42,7 +38,7 @@ struct MiniPlayerBar: View {
 
     private var trackDetails: some View {
         HStack(spacing: 10) {
-            Button { showNowPlaying = true } label: {
+            Button { if let openPlayer { openPlayer() } else { showNowPlaying = true } } label: {
                 HStack(spacing: 10) {
                     TrackArtwork(track: currentTrack, size: 44)
                     VStack(alignment: .leading, spacing: 3) {
@@ -75,15 +71,15 @@ struct MiniPlayerBar: View {
             } else { audioManager.togglePlayPause() }
         } label: {
             Image(systemName: audioManager.isPlaying ? "pause.fill" : "play.fill")
-                .font(.headline).foregroundStyle(.white).frame(width: 42, height: 42)
+                .font(.headline).foregroundStyle(theme.onAccent).frame(width: 42, height: 42)
                 .background(theme.accent, in: Circle())
-        }.buttonStyle(.plain).hoverEffect(.highlight)
+        }.buttonStyle(StudioPressStyle()).hoverEffect(.highlight)
         .accessibilityLabel(audioManager.isPlaying ? "Pause" : "Play")
         .disabled(audioManager.currentTrackID == nil && library.playbackIDs.isEmpty)
     }
 
     private var repeatButton: some View {
-        control("Repeat: \(library.repeatMode.rawValue)", icon: library.repeatMode == .one ? "repeat.1" : "repeat", active: library.repeatMode != .off) {
+        control("Повтор: \(library.repeatMode.localizedTitle)", icon: library.repeatMode == .one ? "repeat.1" : "repeat", active: library.repeatMode != .off) {
             switch library.repeatMode {
             case .off: library.repeatMode = .all
             case .all: library.repeatMode = .one
@@ -104,7 +100,7 @@ struct MiniPlayerBar: View {
     private func control(_ title: String, icon: String, active: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon).font(.subheadline)
-                .foregroundStyle(active ? theme.accent : theme.ink).frame(width: 32, height: 36)
+                .foregroundStyle(active ? theme.accent : theme.ink).frame(width: 44, height: 44)
         }.buttonStyle(.plain).musicHover().accessibilityLabel(title)
     }
 
@@ -116,17 +112,18 @@ struct MiniPlayerBar: View {
 struct TrackArtwork: View {
     let track: Track?
     let size: CGFloat
+    @Environment(\.carAmbientTheme) private var theme
     @State private var decodedImage: UIImage?
     var body: some View {
         Group {
             if let image = decodedImage {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
-                Color(white: 0.95).overlay {
-                    Image(systemName: "music.note").font(.system(size: size * 0.36, weight: .light)).foregroundStyle(Color(white: 0.35))
+                theme.surface.overlay {
+                    Image(systemName: "music.note").font(.system(size: size * 0.36, weight: .light)).foregroundStyle(theme.mutedInk)
                 }
             }
-        }.frame(width: size, height: size).clipShape(RoundedRectangle(cornerRadius: 6))
+        }.frame(width: size, height: size).clipShape(RoundedRectangle(cornerRadius: min(size * 0.2, 28)))
         .accessibilityHidden(true)
         .task(id: ArtworkRequest(id: track?.id, data: track?.artworkData)) {
             decodedImage = nil

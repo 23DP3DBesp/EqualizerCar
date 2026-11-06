@@ -107,8 +107,8 @@ struct NoLookGestureControlView: View {
 }
 
 private enum TwoFingerControlMode: String, CaseIterable, Identifiable {
-    case volume = "Volume"
-    case preset = "Preset"
+    case volume = "Громкость"
+    case preset = "Пресет"
 
     var id: String { rawValue }
 }

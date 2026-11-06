@@ -19,7 +19,7 @@ struct LevelMeterView: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.black.opacity(0.04))
+                    .fill(theme.surface)
 
                 RoundedRectangle(cornerRadius: 4)
                     .fill(

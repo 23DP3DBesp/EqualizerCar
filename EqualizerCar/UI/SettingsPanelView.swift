@@ -43,7 +43,7 @@ struct SettingsPanelView: View {
         settingsCard(title: "Library", icon: "music.note.list") {
             Picker("Default Sort", selection: $library.sortOption) {
                 ForEach(LibraryManager.SortOption.allCases) { option in
-                    Text(option.rawValue).tag(option)
+                    Text(option.localizedTitle).tag(option)
                 }
             }
 
@@ -61,7 +61,7 @@ struct SettingsPanelView: View {
 
             Picker("Repeat", selection: $library.repeatMode) {
                 ForEach(LibraryManager.RepeatMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.localizedTitle).tag(mode)
                 }
             }
         }
@@ -87,6 +87,14 @@ struct SettingsPanelView: View {
 
     private var maintenanceSettings: some View {
         settingsCard(title: "Maintenance", icon: "wrench.and.screwdriver") {
+            NavigationLink {
+                LibraryCleanupView(audioManager: audioManager, library: library)
+            } label: {
+                Label("Scan & clean library", systemImage: "waveform.badge.magnifyingglass")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.bordered)
+
             Button(role: .destructive) {
                 showDeleteAllConfirmation = true
             } label: {
@@ -104,7 +112,7 @@ struct SettingsPanelView: View {
 
     private func settingsCard<Content: View>(title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: icon)
+            Label(LocalizedStringKey(title), systemImage: icon)
                 .font(.headline)
                 .foregroundStyle(theme.ink)
             content()

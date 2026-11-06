@@ -7,20 +7,40 @@ import MediaPlayer
 
 @MainActor
 class AudioEngineManager: ObservableObject {
+    var isAudioEngineRunning: Bool { engine.isRunning }
     @Published var isPlaying = false
+    @Published var playbackError: String?
     @Published var currentTrackTitle = "Нет трека"
     @Published var currentTrackID: UUID?
 
+    @Published var isEqualizerEnabled = true { didSet { eqNode.bypass = !isEqualizerEnabled } }
     @Published var bandCount = 5
     @Published var bandFrequencies: [Float] = AudioEngineManager.generateFrequencies(count: 5)
     @Published var bandGains: [Float] = Array(repeating: 0, count: 5)
     @Published var bandFilterTypes: [EQBandFilterType] = Array(repeating: .parametric, count: 5)
 
+    @Published var parametricNotchEnabled: Bool = false { didSet { notchPlugin.isEnabled = parametricNotchEnabled } }
+    @Published var parametricNotchFrequency: Float = 1000 { didSet { notchPlugin.frequency = parametricNotchFrequency } }
+    @Published var parametricNotchQ: Float = 4 { didSet { notchPlugin.qFactor = parametricNotchQ } }
+    @Published var parametricNotchDepth: Float = -12 { didSet { notchPlugin.depth = parametricNotchDepth } }
+    @Published var subsonicEnabled: Bool = false { didSet { subsonicProcessor.enable(subsonicEnabled) } }
+    @Published var subsonicCutoff: Float = 30 { didSet { subsonicProcessor.set(1, subsonicCutoff) } }
+    @Published var vocalClarityEnabled: Bool = false { didSet { vocalClarityProcessor.enable(vocalClarityEnabled) } }
+    @Published var vocalClarityAmount: Float = 0.5 { didSet { vocalClarityProcessor.set(1, vocalClarityAmount) } }
+    @Published var nightModeEnabled: Bool = false { didSet { nightModeProcessor.enable(nightModeEnabled) } }
+    @Published var nightModeAmount: Float = 0.5 { didSet { nightModeProcessor.set(1, nightModeAmount) } }
+    @Published var tapeSaturationEnabled: Bool = false { didSet { tapePlugin.isEnabled = tapeSaturationEnabled } }
+    @Published var tapeSaturationDrive: Float = 0.35 { didSet { tapePlugin.drive = tapeSaturationDrive } }
+    @Published var tapeSaturationMix: Float = 0.65 { didSet { tapePlugin.mix = tapeSaturationMix } }
+    @Published var transientShaperEnabled: Bool = false { didSet { transientPlugin.isEnabled = transientShaperEnabled } }
+    @Published var transientAttack: Float = 6 { didSet { transientPlugin.attack = transientAttack } }
+    @Published var transientSustain: Float = -3 { didSet { transientPlugin.sustain = transientSustain } }
+    @Published var softClipperDrive: Float = 0.35 { didSet { softClipperPlugin.drive = softClipperDrive } }
     @Published var bassBoostEnabled = false { didSet { bassBoostPlugin.isEnabled = bassBoostEnabled } }
     @Published var bassBoostIntensity: Float = 8 { didSet { bassBoostPlugin.intensity = bassBoostIntensity } }
     @Published var bassBoostFrequency: Float = 80 { didSet { bassBoostPlugin.frequency = bassBoostFrequency } }
     @Published var virtualSubwooferEnabled = false { didSet { virtualSubwooferPlugin.isEnabled = virtualSubwooferEnabled } }
-    @Published var virtualSubwooferMix: Float = 0 { didSet { virtualSubwooferPlugin.mix = virtualSubwooferMix } }
+    @Published var virtualSubwooferMix: Float = 0.5 { didSet { virtualSubwooferPlugin.mix = virtualSubwooferMix } }
     @Published var virtualSubwooferCutoff: Float = 55 { didSet { virtualSubwooferPlugin.cutoffFrequency = virtualSubwooferCutoff } }
     @Published var cabinNotchEnabled = false { didSet { cabinNotchFilterPlugin.isEnabled = cabinNotchEnabled } }
     @Published var cabinNotchFrequency: Float = 135 { didSet { cabinNotchFilterPlugin.frequency = cabinNotchFrequency } }
@@ -42,17 +62,12 @@ class AudioEngineManager: ObservableObject {
     @Published var bassTightness: Float = 0.5 { didSet { if !isBatchingBassLabChanges { applyBassTightness() } } }
     @Published var subwooferModeEnabled: Bool = false {
         didSet {
-            crossoverEnabled = subwooferModeEnabled || bassMonoBelow100Enabled
+            crossoverEnabled = subwooferModeEnabled
             crossoverMode = subwooferModeEnabled ? .subwoofer : crossoverMode
         }
     }
     @Published var bassMonoBelow100Enabled: Bool = false {
-        didSet {
-            crossoverEnabled = bassMonoBelow100Enabled || subwooferModeEnabled
-            if bassMonoBelow100Enabled {
-                crossoverFrequency = min(crossoverFrequency, 100)
-            }
-        }
+        didSet { bassMono.enable(bassMonoBelow100Enabled) }
     }
 
     // internal smoothing state for adaptive bass
@@ -65,7 +80,7 @@ class AudioEngineManager: ObservableObject {
 
     @Published var volumeBoost: Float = 1 { didSet { volumeBoostPlugin.multiplier = Self.clampedVolumeBoost(volumeBoost) } }
     @Published var auxSignalBoostEnabled = false { didSet { auxSignalBoostPlugin.isEnabled = auxSignalBoostEnabled } }
-    @Published var auxSignalBoostDB: Float = 0 { didSet { auxSignalBoostPlugin.gainDB = auxSignalBoostDB } }
+    @Published var auxSignalBoostDB: Float = 3 { didSet { auxSignalBoostPlugin.gainDB = auxSignalBoostDB } }
     @Published var fmExciterEnabled = false { didSet { fmExciterPlugin.isEnabled = fmExciterEnabled } }
     @Published var fmExciterIntensity: Float = 0.35 { didSet { fmExciterPlugin.intensity = fmExciterIntensity } }
     @Published var groundLoopSuppressorEnabled = false { didSet { groundLoopSuppressorPlugin.isEnabled = groundLoopSuppressorEnabled } }
@@ -73,7 +88,7 @@ class AudioEngineManager: ObservableObject {
     @Published var engineNoiseNotchEnabled = false { didSet { groundLoopSuppressorPlugin.enginePitchTrackingEnabled = engineNoiseNotchEnabled } }
     @Published var engineNoiseFrequency: Float = 120 { didSet { groundLoopSuppressorPlugin.enginePitchFrequency = engineNoiseFrequency } }
     @Published var stereoCollapseEnabled = false { didSet { stereoCollapsePlugin.isEnabled = stereoCollapseEnabled } }
-    @Published var stereoCollapseWidth: Float = 1 { didSet { stereoCollapsePlugin.width = stereoCollapseWidth } }
+    @Published var stereoCollapseWidth: Float = 0.35 { didSet { stereoCollapsePlugin.width = stereoCollapseWidth } }
     @Published var clipperProtectionEnabled = true { didSet { clipperProtectionPlugin.isEnabled = clipperProtectionEnabled } }
     @Published var logic7SpatializerEnabled = false { didSet { logic7SpatializerPlugin.isEnabled = logic7SpatializerEnabled } }
     @Published var logic7Ambience: Float = 0.35 { didSet { logic7SpatializerPlugin.ambience = logic7Ambience } }
@@ -207,8 +222,8 @@ class AudioEngineManager: ObservableObject {
     @Published var duration: Double = 0
     @Published var waveformSamples: [Float] = Array(repeating: 0, count: WaveformAnalyzer.defaultSampleCount)
 
-    @Published var inputGain: Float = 0.82 { didSet { inputGainNode?.outputVolume = min(max(inputGain, 0), 1.25) } }
-    @Published var outputGain: Float = 0.90 { didSet { outputGainNode?.outputVolume = min(max(outputGain, 0), 1.25) } }
+    @Published var inputGain: Float = 0.82 { didSet { inputTrim.set(1, Self.gainDB(inputGain)) } }
+    @Published var outputGain: Float = 0.90 { didSet { outputTrim.set(1, Self.gainDB(outputGain)) } }
     @Published var stereoBalance: Float = 0 { didSet { updateOutputPan() } } // -1..1 left..right
     @Published var frontRearFader: Float = 0 { didSet { /* TODO: route to front/rear buses when available */ } }
 
@@ -216,6 +231,16 @@ class AudioEngineManager: ObservableObject {
     private let playerNode = AVAudioPlayerNode()
     private var eqNode: AVAudioUnitEQ
 
+    private let notchPlugin = ParametricNotchPlugin()
+    private let subsonicProcessor = RealtimeDSPNode(.subsonic)
+    private let vocalClarityProcessor = RealtimeDSPNode(.vocalClarity)
+    private let nightModeProcessor = RealtimeDSPNode(.nightMode)
+    private let tapePlugin = TapeSaturationPlugin()
+    private let transientPlugin = TransientShaperPlugin()
+    private let inputTrim = RealtimeDSPNode(.gain)
+    private let outputTrim = RealtimeDSPNode(.gain)
+    private let bassMono = RealtimeDSPNode(.bassMono)
+    private let eqSmoother = EQParameterSmoother()
     private let bassBoostPlugin = BassBoostPlugin()
     private let virtualSubwooferPlugin = VirtualSubwooferPlugin()
     private let cabinNotchFilterPlugin = CabinNotchFilterPlugin()
@@ -273,10 +298,18 @@ class AudioEngineManager: ObservableObject {
         spectrumWindow = Self.makeHannWindow(size: spectrumFFTSize)
         spectrumLog2Size = vDSP_Length(log2(Float(spectrumFFTSize)))
         fftSetup = vDSP_create_fftsetup(spectrumLog2Size, FFTRadix(kFFTRadix2))
+        subsonicProcessor.set(1, subsonicCutoff)
+        vocalClarityProcessor.set(1, vocalClarityAmount)
+        nightModeProcessor.set(1, nightModeAmount)
         applyInitialPluginParameters()
         registerAudioSessionNotifications()
         configureRemoteCommandCenter()
         setupEngine()
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--audio-smoke-test") {
+            Task { await runPlaybackSmokeTest() }
+        }
+#endif
     }
 
     deinit {
@@ -308,6 +341,11 @@ class AudioEngineManager: ObservableObject {
         }
     }
 
+    private static func gainDB(_ value: Float) -> Float {
+        guard value.isFinite, value > 0 else { return -120 }
+        return 20 * log10(min(value, 1.25))
+    }
+
     private static func clampedVolumeBoost(_ value: Float) -> Float {
         guard value.isFinite else { return 1 }
         return min(max(value, 1), 3)
@@ -321,6 +359,8 @@ class AudioEngineManager: ObservableObject {
     }
 
     private func applyInitialPluginParameters() {
+        inputTrim.enable(true); inputTrim.set(1, Self.gainDB(inputGain))
+        outputTrim.enable(true); outputTrim.set(1, Self.gainDB(outputGain))
         stereoWideningPlugin.intensity = stereoWideningIntensity
         compressorPlugin.threshold = compressorThreshold
         compressorPlugin.ratio = compressorRatio
@@ -359,7 +399,7 @@ class AudioEngineManager: ObservableObject {
     }
 
     private func setupEngine() {
-        configureAudioSession()
+        let sessionReady = configureAudioSession()
         configureEQBands(node: eqNode, frequencies: bandFrequencies)
 
         let graph = AudioGraphBuilder.build(
@@ -367,6 +407,7 @@ class AudioEngineManager: ObservableObject {
             playerNode: playerNode,
             eqNode: eqNode,
             preEQNodes: [
+                inputTrim.node,
                 auxSignalBoostPlugin.node
             ],
             toneAndDynamicsNodes: [
@@ -374,6 +415,10 @@ class AudioEngineManager: ObservableObject {
                     phaseInverterPlugin.node,
                 groundLoopSuppressorPlugin.node,
                 cabinNotchFilterPlugin.node,
+                notchPlugin.node,
+                subsonicProcessor.node,
+                vocalClarityProcessor.node,
+                bassMono.node,
                 virtualSubwooferPlugin.node,
                 bassBoostPlugin.node,
                 trebleBoostPlugin.node,
@@ -381,8 +426,10 @@ class AudioEngineManager: ObservableObject {
                 loudnessPlugin.node,
                 volumeBoostPlugin.node,
                 compressorPlugin.node,
-                limiterPlugin.node,
                 multibandCompressor.node,
+                nightModeProcessor.node,
+                transientPlugin.node,
+                tapePlugin.node,
                 softClipperPlugin.node,
                 stereoCollapsePlugin.node,
                 stereoWideningPlugin.node,
@@ -391,16 +438,17 @@ class AudioEngineManager: ObservableObject {
                 logic7SpatializerPlugin.node
             ],
             reverbNode: reverbPlugin.node,
-            finalProtectionNode: clipperProtectionPlugin.node
+            finalProtectionNode: clipperProtectionPlugin.node,
+            finalProcessingNodes: [outputTrim.node, limiterPlugin.node]
         )
 
         inputGainNode = graph.inputGainNode
         environmentNode = graph.environmentNode
         outputGainNode = graph.outputGainNode
-        inputGainNode?.outputVolume = inputGain
-        outputGainNode?.outputVolume = outputGain
+        inputGainNode?.outputVolume = 1
+        outputGainNode?.outputVolume = 1
         configureSpatialEnvironment()
-        startEngine()
+        if sessionReady { _ = startEngine() }
     }
 
     private func configureSpatialEnvironment() {
@@ -452,20 +500,76 @@ class AudioEngineManager: ObservableObject {
         }
     }
 
-    private func startEngine() {
-        do { try engine.start() } catch { print("Не удалось запустить AVAudioEngine: \(error)") }
+    @discardableResult
+    private func startEngine() -> Bool {
+        if engine.isRunning { return true }
+        do {
+            try engine.start()
+            return engine.isRunning
+        } catch {
+            playbackError = "Не удалось запустить аудиодвижок: \(error.localizedDescription)"
+            print("Не удалось запустить AVAudioEngine: \(error)")
+            return false
+        }
     }
 
-    private func configureAudioSession() {
-        let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.playback, mode: .default, options: [.allowBluetoothA2DP, .allowAirPlay])
-            try session.setPreferredSampleRate(48_000)
-            try session.setPreferredIOBufferDuration(0.005)
-            try session.setActive(true)
-        } catch {
-            print("Не удалось настроить AVAudioSession: \(error)")
+    private func prepareEngineForPlayback() -> Bool {
+        guard configureAudioSession(), startEngine() else {
+            isPlaying = false
+            stopProgressTimer()
+            stopEightDRotation()
+            updateNowPlayingInfo()
+            return false
         }
+        return true
+    }
+
+    @discardableResult
+    private func configureAudioSession() -> Bool {
+        let session = AVAudioSession.sharedInstance()
+
+        do {
+            if session.category != .playback || session.mode != .default {
+                // Playback already supports A2DP and AirPlay. Explicit allowAirPlay
+                // is only valid for playAndRecord and returns paramErr (-50) here.
+                try session.setCategory(.playback, mode: .default, options: [])
+            }
+        } catch {
+            return reportAudioSessionFailure(error, operation: "setCategory(.playback)")
+        }
+
+        // These are preferences, not prerequisites. Mixers convert the actual
+        // device format to the DSP format when a route cannot honor 48 kHz.
+        do {
+            if session.preferredSampleRate != 48_000 {
+                try session.setPreferredSampleRate(48_000)
+            }
+        } catch {
+            print("AVAudioSession.setPreferredSampleRate: \(error); используется частота маршрута")
+        }
+        do {
+            if abs(session.preferredIOBufferDuration - 0.005) > 0.0001 {
+                try session.setPreferredIOBufferDuration(0.005)
+            }
+        } catch {
+            print("AVAudioSession.setPreferredIOBufferDuration: \(error); используется буфер маршрута")
+        }
+        do {
+            try session.setActive(true)
+#if DEBUG
+            NSLog("AUDIO_SESSION_READY category=%@ sampleRate=%.0f", session.category.rawValue, session.sampleRate)
+#endif
+            return true
+        } catch {
+            return reportAudioSessionFailure(error, operation: "setActive(true)")
+        }
+    }
+
+    private func reportAudioSessionFailure(_ error: Error, operation: String) -> Bool {
+        let failure = error as NSError
+        playbackError = "Не удалось активировать звук (\(operation), код \(failure.code)): \(failure.localizedDescription)"
+        NSLog("AVAudioSession.%@: %@ (%ld)", operation, failure.domain, failure.code)
+        return false
     }
 
     private func configureRemoteCommandCenter() {
@@ -565,8 +669,10 @@ class AudioEngineManager: ObservableObject {
             }
             engine.pause()
         case .ended:
-            configureAudioSession()
-            startEngine()
+            guard configureAudioSession(), startEngine() else {
+                shouldResumeAfterInterruption = false
+                return
+            }
             let optionValue = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
             let options = AVAudioSession.InterruptionOptions(rawValue: optionValue)
             if shouldResumeAfterInterruption && options.contains(.shouldResume) {
@@ -585,6 +691,8 @@ class AudioEngineManager: ObservableObject {
 
         switch reason {
         case .oldDeviceUnavailable:
+            // Avoid unexpectedly switching loud playback to the phone speaker.
+            shouldResumeAfterInterruption = false
             pause()
         case .newDeviceAvailable, .routeConfigurationChange, .categoryChange, .override:
             restartPlaybackGraph(resume: shouldResume)
@@ -595,7 +703,9 @@ class AudioEngineManager: ObservableObject {
 
     private func handleMediaServicesReset() {
         let shouldResume = isPlaying
+        shouldResumeAfterInterruption = shouldResume
         restartPlaybackGraph(resume: shouldResume)
+        shouldResumeAfterInterruption = false
     }
 
     private func handleEngineConfigurationChange() {
@@ -609,8 +719,15 @@ class AudioEngineManager: ObservableObject {
         }
         stopScheduledPlayback()
         engine.pause()
-        configureAudioSession()
-        startEngine()
+        guard configureAudioSession(), startEngine() else {
+            if resume {
+                isPlaying = false
+                stopProgressTimer()
+                stopEightDRotation()
+                updateNowPlayingInfo()
+            }
+            return
+        }
         if resume {
             play()
         } else if audioFile != nil {
@@ -632,6 +749,7 @@ class AudioEngineManager: ObservableObject {
         stopEightDRotation()
         engine.pause()
 
+        eqSmoother.cancelAll()
         let oldCount = bandCount
         let oldGains = bandGains
         let oldFilterTypes = bandFilterTypes
@@ -671,15 +789,13 @@ class AudioEngineManager: ObservableObject {
         engine.disconnectNodeOutput(eqNode)
         engine.disconnectNodeInput(eqNode)
 
-        if let inputGainNode {
-            engine.connect(inputGainNode, to: newEQ, format: nil)
-        } else {
-            engine.connect(playerNode, to: newEQ, format: nil)
-        }
-        engine.connect(newEQ, to: crossoverPlugin.node, format: nil)
+        // Preserve input trim and AUX boost when replacing the EQ node.
+        engine.connect(auxSignalBoostPlugin.node, to: newEQ, format: AudioGraphBuilder.processingFormat)
+        engine.connect(newEQ, to: crossoverPlugin.node, format: AudioGraphBuilder.processingFormat)
 
         // Swap references
         let previousEQ = eqNode
+        newEQ.bypass = !isEqualizerEnabled
         eqNode = newEQ
         bandCount = count
         bandFrequencies = newFrequencies
@@ -689,10 +805,10 @@ class AudioEngineManager: ObservableObject {
         engine.disconnectNodeOutput(previousEQ)
         engine.disconnectNodeInput(previousEQ)
         engine.detach(previousEQ)
-        startEngine()
+        let engineReady = startEngine()
         if audioFile != nil {
             schedulePlayback(from: currentFrame)
-            if wasPlaying {
+            if wasPlaying, engineReady {
                 playerNode.play()
                 isPlaying = true
                 startProgressTimer()
@@ -701,6 +817,8 @@ class AudioEngineManager: ObservableObject {
                 }
             } else {
                 isPlaying = false
+                stopProgressTimer()
+                stopEightDRotation()
             }
         }
     }
@@ -708,7 +826,11 @@ class AudioEngineManager: ObservableObject {
     func setBandGain(index: Int, value: Float) {
         guard index >= 0 && index < eqNode.bands.count else { return }
         guard !bandGains.indices.contains(index) || abs(bandGains[index] - value) > 0.001 else { return }
-        eqNode.bands[index].gain = value
+        let value = min(max(value.isFinite ? value : 0, -24), 24)
+        let band = eqNode.bands[index]
+        if isPlaying {
+            eqSmoother.set(key: index, current: band.gain, target: value) { band.gain = $0 }
+        } else { eqSmoother.cancel(key: index); band.gain = value }
         if index < bandGains.count { bandGains[index] = value }
     }
 
@@ -717,7 +839,10 @@ class AudioEngineManager: ObservableObject {
         let lowerBound = index > 0 ? bandFrequencies[index - 1] * 1.08 : 35
         let upperBound = index + 1 < bandFrequencies.count ? bandFrequencies[index + 1] / 1.08 : 18_000
         let clampedFrequency = min(max(value, lowerBound), upperBound)
-        eqNode.bands[index].frequency = clampedFrequency
+        let band = eqNode.bands[index]
+        if isPlaying {
+            eqSmoother.set(key: 1000 + index, current: band.frequency, target: clampedFrequency, logarithmic: true) { band.frequency = $0 }
+        } else { eqSmoother.cancel(key: 1000 + index); band.frequency = clampedFrequency }
         if index < bandFrequencies.count {
             bandFrequencies[index] = clampedFrequency
         }
@@ -726,6 +851,8 @@ class AudioEngineManager: ObservableObject {
     func setBandFilterType(index: Int, type: EQBandFilterType) {
         guard index >= 0 && index < eqNode.bands.count else { return }
         guard !bandFilterTypes.indices.contains(index) || bandFilterTypes[index] != type else { return }
+        eqSmoother.cancel(key: index)
+        eqSmoother.cancel(key: 1000 + index)
         let band = eqNode.bands[index]
         band.filterType = eqFilterType(for: type)
         switch type {
@@ -752,6 +879,7 @@ class AudioEngineManager: ObservableObject {
     }
 
     func applyGains(_ gains: [Float]) {
+        eqSmoother.cancelAll()
         let clampedGains = Array(gains.prefix(eqNode.bands.count))
         for (index, value) in clampedGains.enumerated() {
             eqNode.bands[index].gain = value
@@ -794,6 +922,23 @@ class AudioEngineManager: ObservableObject {
     }
 
     func applyEffects(_ effects: PresetEffectSettings) {
+        setIfChanged(\.parametricNotchEnabled, effects.parametricNotchEnabled)
+        setIfChanged(\.parametricNotchFrequency, effects.parametricNotchFrequency)
+        setIfChanged(\.parametricNotchQ, effects.parametricNotchQ)
+        setIfChanged(\.parametricNotchDepth, effects.parametricNotchDepth)
+        setIfChanged(\.subsonicEnabled, effects.subsonicEnabled)
+        setIfChanged(\.subsonicCutoff, effects.subsonicCutoff)
+        setIfChanged(\.vocalClarityEnabled, effects.vocalClarityEnabled)
+        setIfChanged(\.vocalClarityAmount, effects.vocalClarityAmount)
+        setIfChanged(\.nightModeEnabled, effects.nightModeEnabled)
+        setIfChanged(\.nightModeAmount, effects.nightModeAmount)
+        setIfChanged(\.tapeSaturationEnabled, effects.tapeSaturationEnabled)
+        setIfChanged(\.tapeSaturationDrive, effects.tapeSaturationDrive)
+        setIfChanged(\.tapeSaturationMix, effects.tapeSaturationMix)
+        setIfChanged(\.transientShaperEnabled, effects.transientShaperEnabled)
+        setIfChanged(\.transientAttack, effects.transientAttack)
+        setIfChanged(\.transientSustain, effects.transientSustain)
+        setIfChanged(\.softClipperDrive, effects.softClipperDrive)
         setIfChanged(\.bassBoostEnabled, effects.bassBoostEnabled)
         setIfChanged(\.bassBoostIntensity, effects.bassBoostIntensity)
         setIfChanged(\.bassBoostFrequency, effects.bassBoostFrequency)
@@ -805,6 +950,7 @@ class AudioEngineManager: ObservableObject {
         setIfChanged(\.cabinNotchQ, effects.cabinNotchQ)
         setIfChanged(\.cabinNotchGain, effects.cabinNotchGain)
         setIfChanged(\.adaptiveBassBoostEnabled, effects.adaptiveBassBoostEnabled)
+        setIfChanged(\.subwooferModeEnabled, effects.subwooferModeEnabled)
         setIfChanged(\.crossoverEnabled, effects.crossoverEnabled)
         setIfChanged(\.crossoverFrequency, effects.crossoverFrequency)
         setIfChanged(\.crossoverMode, effects.crossoverMode)
@@ -814,7 +960,6 @@ class AudioEngineManager: ObservableObject {
         setIfChanged(\.punchBassGain, effects.punchBassGain)
         setIfChanged(\.warmthGain, effects.warmthGain)
         setIfChanged(\.bassTightness, effects.bassTightness)
-        setIfChanged(\.subwooferModeEnabled, effects.subwooferModeEnabled)
         setIfChanged(\.bassMonoBelow100Enabled, effects.bassMonoBelow100Enabled)
         setIfChanged(\.trebleBoostEnabled, effects.trebleBoostEnabled)
         setIfChanged(\.loudnessEnabled, effects.loudnessEnabled)
@@ -934,7 +1079,24 @@ class AudioEngineManager: ObservableObject {
             warmthGain: warmthGain,
             bassTightness: bassTightness,
             subwooferModeEnabled: subwooferModeEnabled,
-            bassMonoBelow100Enabled: bassMonoBelow100Enabled
+            bassMonoBelow100Enabled: bassMonoBelow100Enabled,
+            parametricNotchEnabled: parametricNotchEnabled,
+            parametricNotchFrequency: parametricNotchFrequency,
+            parametricNotchQ: parametricNotchQ,
+            parametricNotchDepth: parametricNotchDepth,
+            subsonicEnabled: subsonicEnabled,
+            subsonicCutoff: subsonicCutoff,
+            vocalClarityEnabled: vocalClarityEnabled,
+            vocalClarityAmount: vocalClarityAmount,
+            nightModeEnabled: nightModeEnabled,
+            nightModeAmount: nightModeAmount,
+            tapeSaturationEnabled: tapeSaturationEnabled,
+            tapeSaturationDrive: tapeSaturationDrive,
+            tapeSaturationMix: tapeSaturationMix,
+            transientShaperEnabled: transientShaperEnabled,
+            transientAttack: transientAttack,
+            transientSustain: transientSustain,
+            softClipperDrive: softClipperDrive
         )
     }
 
@@ -1118,11 +1280,28 @@ class AudioEngineManager: ObservableObject {
     }
 
     private func loadFile(url: URL, title: String, trackID: UUID?, durationHint: Double?, waveformHint: [Float]?) {
+        playbackError = nil
         let didStartAccess = url.startAccessingSecurityScopedResource()
         defer { if didStartAccess { url.stopAccessingSecurityScopedResource() } }
 
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            pause()
+            audioFile = nil
+            currentTrackID = trackID
+            currentTrackTitle = title
+            playbackError = "Файл «\(title)» недоступен. Возможно, он был удалён или перемещён. Удалите его из медиатеки и импортируйте снова."
+            updateNowPlayingInfo()
+            return
+        }
+
         do {
             let file = try AVAudioFile(forReading: url)
+            stopScheduledPlayback()
+            if let inputGainNode,
+               playerNode.outputFormat(forBus: 0) != file.processingFormat {
+                engine.stop()
+                engine.connect(playerNode, to: inputGainNode, format: file.processingFormat)
+            }
             audioFile = file
             currentTrackTitle = title
             currentTrackID = trackID
@@ -1135,21 +1314,27 @@ class AudioEngineManager: ObservableObject {
             schedulePlayback(from: currentFrame)
             updateNowPlayingInfo()
         } catch {
+            pause()
+            audioFile = nil
+            currentTrackID = trackID
+            currentTrackTitle = title
+            playbackError = "Не удалось прочитать «\(title)». Формат может быть неподдерживаемым, файл повреждён или недоступен. Подробности: \(error.localizedDescription)"
+            updateNowPlayingInfo()
             print("Ошибка загрузки файла: \(error)")
         }
     }
 
     func play() {
         guard let file = audioFile else { return }
-        configureAudioSession()
-        if !engine.isRunning { startEngine() }
         if currentFrame >= file.length {
             currentFrame = 0
             currentTime = 0
         }
         stopScheduledPlayback()
         schedulePlayback(from: currentFrame)
+        guard prepareEngineForPlayback() else { return }
         playerNode.play()
+        playbackError = nil
         isPlaying = true
         startProgressTimer()
         if eightDAudioEnabled {
@@ -1164,6 +1349,18 @@ class AudioEngineManager: ObservableObject {
         isPlaying = false
         stopProgressTimer()
         stopEightDRotation()
+        updateNowPlayingInfo()
+    }
+
+    func unloadCurrentTrack() {
+        pause()
+        audioFile = nil
+        currentTrackID = nil
+        currentTrackTitle = "Нет трека"
+        currentFrame = 0
+        currentTime = 0
+        duration = 0
+        waveformSamples = []
         updateNowPlayingInfo()
     }
 
@@ -1191,6 +1388,7 @@ class AudioEngineManager: ObservableObject {
 
         schedulePlayback(from: currentFrame)
         if wasPlaying {
+            guard prepareEngineForPlayback() else { return }
             playerNode.play()
             startProgressTimer()
         }
@@ -1208,7 +1406,7 @@ class AudioEngineManager: ObservableObject {
         playbackScheduleID = scheduleID
         let remainingFrames = file.length - frame
         let frameCount = AVAudioFrameCount(min(remainingFrames, AVAudioFramePosition(UInt32.max)))
-        playerNode.scheduleSegment(file, startingFrame: frame, frameCount: frameCount, at: nil) {
+        playerNode.scheduleSegment(file, startingFrame: frame, frameCount: frameCount, at: nil, completionCallbackType: .dataPlayedBack) { _ in
             Task { @MainActor [weak self] in
                 guard let manager = self, manager.playbackScheduleID == scheduleID else { return }
                 manager.isPlaying = false
@@ -1295,10 +1493,11 @@ class AudioEngineManager: ObservableObject {
         eightDRotationTimer?.invalidate()
         eightDRotationTimer = nil
         eightDRotationAngle = 0
+        eightDPan = 0
         eightDAudioPosition = 0
         eightDEnergyEnvelope = 0
         eightDPreviousBassEnergy = 0
-        outputGainNode?.pan = 0
+        outputTrim.set(2, stereoBalance)
     }
 
     private func updateEightDPosition() {
@@ -1349,17 +1548,17 @@ class AudioEngineManager: ObservableObject {
 
         let radius = 0.7 + clampedIntensity * (1.25 + modeEnergy * 1.45 + radiusBias * 0.8)
         let depth = -1.0 - clampedIntensity * (1.0 + depthBias * 1.2)
-        let angleStep = clampedSpeed * (modeEnergy * 0.13 + bassTransient * 0.65)
+        let angleStep = 2 * Float.pi * clampedSpeed / 30 * (0.65 + modeEnergy * 0.7 + bassTransient * 0.3)
 
         eightDRotationAngle += angleStep
-        let motionScale = (0.10 + modeEnergy * 0.90) * (1 - centerPull)
+        let motionScale = (0.35 + modeEnergy * 0.65) * (1 - centerPull)
         let x = (sin(eightDRotationAngle) * radius * motionScale) + spectralTilt
         let z = depth + cos(eightDRotationAngle) * radius * (0.20 + modeEnergy * 0.35)
         environmentNode?.position = AVAudioMake3DPoint(x, 0, z)
 
         // AVAudioEnvironmentNode spatializes mono sources best. Most imported songs are stereo,
         // so pan automation is the guaranteed audible 8D movement for regular MP3 files.
-        let targetPan = sin(eightDRotationAngle) * min(0.95, clampedIntensity) * motionScale + spectralTilt
+        let targetPan = sin(eightDRotationAngle) * min(0.95, clampedIntensity) * motionScale + spectralTilt * clampedIntensity
         eightDPan += (min(max(targetPan, -0.95), 0.95) - eightDPan) * (0.08 + modeEnergy * 0.20)
         eightDAudioPosition = eightDPan
         updateOutputPan()
@@ -1377,8 +1576,8 @@ class AudioEngineManager: ObservableObject {
 
     private func updateOutputPan() {
         // combine base stereo balance and eightD pan
-        let combined = min(max(stereoBalance + eightDPan, -1), 1)
-        outputGainNode?.pan = combined
+        let combined = min(max(stereoBalance + (eightDAudioEnabled ? eightDPan : 0), -1), 1)
+        outputTrim.set(2, combined)
     }
 
     func startLevelMetering() {
@@ -1570,3 +1769,51 @@ final class AudioTelemetry {
     var eightDAudioPosition: Float = 0
     var currentTime: Double = 0
 }
+
+#if DEBUG
+extension AudioEngineManager {
+    /// Opt-in simulator regression: actual app graph, file scheduling and engine recovery.
+    private func runPlaybackSmokeTest() async {
+        do {
+            for rate in [44_100.0, 48_000.0] {
+                for channels: AVAudioChannelCount in [1, 2] {
+                    let format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: channels)!
+                    let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(rate * 3))!
+                    buffer.frameLength = buffer.frameCapacity
+                    for channel in 0..<Int(channels) {
+                        for frame in 0..<Int(buffer.frameLength) {
+                            buffer.floatChannelData![channel][frame] = 0.01 * sin(Float(frame) * 2 * .pi * 440 / Float(rate))
+                        }
+                    }
+                    let url = FileManager.default.temporaryDirectory.appendingPathComponent("audio-smoke.caf")
+                    do {
+                        let file = try AVAudioFile(forWriting: url, settings: format.settings)
+                        try file.write(from: buffer)
+                    }
+                    load(url: url)
+                    subsonicEnabled = true
+                    vocalClarityEnabled = true
+                    nightModeEnabled = true
+                    play()
+                    try await Task.sleep(for: .milliseconds(600))
+                    assert(engine.isRunning && playerNode.isPlaying && currentPlaybackFrame() > 0, "Initial playback failed")
+                    pause()
+                    engine.stop()
+                    play()
+                    try await Task.sleep(for: .milliseconds(300))
+                    assert(engine.isRunning && playerNode.isPlaying, "Engine recovery failed")
+                    seek(to: 1)
+                    setBandCount(bandCount == 5 ? 10 : 5)
+                    try await Task.sleep(for: .milliseconds(300))
+                    assert(engine.isRunning && playerNode.isPlaying && currentPlaybackFrame() > AVAudioFramePosition(rate), "Seek/EQ rebuild failed")
+                    pause()
+                    try FileManager.default.removeItem(at: url)
+                }
+            }
+            NSLog("AUDIO_SMOKE_PASS: mono/stereo 44.1/48 kHz, recovery, seek, EQ rebuild, new effects")
+        } catch {
+            assertionFailure("Audio smoke test failed: \(error)")
+        }
+    }
+}
+#endif

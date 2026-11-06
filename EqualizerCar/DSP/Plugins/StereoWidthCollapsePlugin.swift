@@ -3,25 +3,13 @@ import AVFoundation
 @MainActor
 final class StereoWidthCollapsePlugin: AudioEffectPlugin {
     let displayName = "Stereo Width Collapse"
-    private let passThroughNode = AVAudioUnitEQ(numberOfBands: 0)
-
-    var node: AVAudioNode { passThroughNode }
-
-    var isEnabled: Bool = false {
-        didSet { applyState() }
-    }
-
-    var width: Float = 1 {
-        didSet { applyState() }
-    }
+    private let processor = RealtimeDSPNode(.collapse)
+    var node: AVAudioNode { processor.node }
+    var isEnabled = false { didSet { processor.enable(isEnabled) } }
+    var width: Float = 0.35 { didSet { processor.set(1, width) } }
 
     init() {
-        applyState()
-    }
-
-    private func applyState() {
-        // Keep this plugin as guaranteed pass-through. The previous MatrixMixer AU
-        // can mute the whole AVAudioEngine graph on some routes even when disabled.
-        passThroughNode.globalGain = 0
+        processor.set(1, width)
+        processor.enable(isEnabled)
     }
 }

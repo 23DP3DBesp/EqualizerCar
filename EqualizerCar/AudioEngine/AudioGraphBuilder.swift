@@ -2,6 +2,9 @@ import AVFoundation
 
 @MainActor
 struct AudioGraphBuilder {
+    // Keep both buses of every custom DSP unit in the same stereo format.
+    // Mixers convert file and hardware formats at the edges of the chain.
+    static let processingFormat = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 2)!
     struct Chain {
         let inputGainNode: AVAudioMixerNode
         let environmentNode: AVAudioEnvironmentNode
@@ -15,22 +18,23 @@ struct AudioGraphBuilder {
         preEQNodes: [AVAudioNode] = [],
         toneAndDynamicsNodes: [AVAudioNode],
         reverbNode: AVAudioNode,
-        finalProtectionNode: AVAudioNode? = nil
+        finalProtectionNode: AVAudioNode? = nil,
+        finalProcessingNodes: [AVAudioNode] = []
     ) -> Chain {
         let inputGainNode = AVAudioMixerNode()
         let environmentNode = AVAudioEnvironmentNode()
         let outputGainNode = AVAudioMixerNode()
 
-        let finalNodes = [finalProtectionNode].compactMap { $0 }
-        let nodes = [playerNode, inputGainNode] + preEQNodes + [eqNode] + toneAndDynamicsNodes + [reverbNode] + finalNodes + [environmentNode, outputGainNode]
+        let finalNodes = finalProcessingNodes + [finalProtectionNode].compactMap { $0 }
+        let nodes = [playerNode, inputGainNode] + preEQNodes + [eqNode] + toneAndDynamicsNodes + [reverbNode, environmentNode, outputGainNode] + finalNodes
         nodes.forEach { engine.attach($0) }
 
         var previous: AVAudioNode = playerNode
-        for node in [inputGainNode] + preEQNodes + [eqNode] + toneAndDynamicsNodes + [reverbNode] + finalNodes + [environmentNode, outputGainNode] {
-            engine.connect(previous, to: node, format: nil)
+        for node in [inputGainNode] + preEQNodes + [eqNode] + toneAndDynamicsNodes + [reverbNode, environmentNode, outputGainNode] + finalNodes {
+            engine.connect(previous, to: node, format: processingFormat)
             previous = node
         }
-        engine.connect(outputGainNode, to: engine.mainMixerNode, format: nil)
+        engine.connect(previous, to: engine.mainMixerNode, format: processingFormat)
 
         configureDefaultGainStaging(inputGainNode: inputGainNode, outputGainNode: outputGainNode)
         configureEnvironment(
@@ -51,8 +55,8 @@ struct AudioGraphBuilder {
     }
 
     static func configureDefaultGainStaging(inputGainNode: AVAudioMixerNode, outputGainNode: AVAudioMixerNode) {
-        inputGainNode.outputVolume = 0.82
-        outputGainNode.outputVolume = 0.90
+        inputGainNode.outputVolume = 1
+        outputGainNode.outputVolume = 1
     }
 
     static func configureEnvironment(
@@ -64,25 +68,11 @@ struct AudioGraphBuilder {
         eightDEnabled: Bool,
         eightDIntensity: Float
     ) {
-        let clampedDepth = min(max(depth, 0), 1)
-        let clampedSurround = min(max(surroundAmount, 0), 1)
-        let clampedEightD = min(max(eightDIntensity, 0), 1)
-        let usesSpatialRenderer = spatialEnabled || eightDEnabled
-
-        node.outputType = .auto
-        node.listenerPosition = AVAudioMake3DPoint(0, 0, 0)
-        node.listenerAngularOrientation = AVAudioMake3DAngularOrientation(0, 0, 0)
-        if eightDEnabled {
-            node.position = AVAudioMake3DPoint(0, 0, -1.3 - clampedEightD * 2.1)
-        } else {
-            node.position = spatialEnabled ? AVAudioMake3DPoint(clampedDepth * 2.4, 0, -1.5 - clampedDepth * 1.8) : AVAudioMake3DPoint(0, 0, 0)
-        }
-        node.sourceMode = usesSpatialRenderer ? .pointSource : .bypass
-        node.renderingAlgorithm = usesSpatialRenderer ? .HRTFHQ : .stereoPassThrough
-        node.reverbBlend = surroundEnabled ? clampedSurround : 0
-        node.reverbParameters.enable = surroundEnabled
-        node.reverbParameters.level = surroundEnabled ? (-18 + clampedSurround * 18) : -120
-        node.reverbParameters.loadFactoryReverbPreset(.largeHall)
+        // Spatial coloration is produced by the DSP nodes. 8D uses the output pan.
+        // An environment is not a point-source input bus; configuring it as one did not spatialize stereo files.
+        node.sourceMode = .bypass
+        node.renderingAlgorithm = .stereoPassThrough
+        node.reverbParameters.enable = false
         node.outputVolume = 1
     }
 }

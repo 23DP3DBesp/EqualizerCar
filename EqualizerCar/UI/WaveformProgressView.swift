@@ -12,7 +12,7 @@ struct WaveformProgressView: View {
 
             ZStack(alignment: .leading) {
                 shape
-                    .fill(Color.black.opacity(0.04))
+                    .fill(theme.surface)
 
                 shape
                     .fill(

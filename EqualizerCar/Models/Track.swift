@@ -14,24 +14,32 @@ import Foundation
 struct Track: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     var artist: String?
+    var album: String?
     var artworkData: Data?
-    var artistDisplayName: String { artist?.isEmpty == false ? artist! : "Unknown artist" }
+    var artistDisplayName: String { artist?.isEmpty == false ? artist! : "Неизвестный исполнитель" }
     var title: String
     // Храним только имя файла (не полный путь!), т.к. полный путь
     // к Documents может меняться между запусками приложения на
     // разных устройствах/симуляторах. Полный URL собираем на лету.
     let fileName: String
     let dateAdded: Date
-    let duration: Double
+    var duration: Double
     let waveformSamples: [Float]
     var isFavorite: Bool
     var lastPlayedAt: Date?
     var presetSnapshot: TrackPresetSnapshot?
 
+    func matchesSearch(_ query: String) -> Bool {
+        query.isEmpty || title.localizedCaseInsensitiveContains(query)
+            || artistDisplayName.localizedCaseInsensitiveContains(query)
+            || (album?.localizedCaseInsensitiveContains(query) ?? false)
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id
         case title
         case artist
+        case album
         case artworkData
         case fileName
         case dateAdded
@@ -46,6 +54,7 @@ struct Track: Identifiable, Codable, Equatable, Sendable {
         id: UUID = UUID(),
         title: String,
         artist: String? = nil,
+        album: String? = nil,
         artworkData: Data? = nil,
         fileName: String,
         dateAdded: Date = Date(),
@@ -58,6 +67,7 @@ struct Track: Identifiable, Codable, Equatable, Sendable {
         self.id = id
         self.title = title
         self.artist = artist
+        self.album = album
         self.artworkData = artworkData
         self.fileName = fileName
         self.dateAdded = dateAdded
@@ -73,6 +83,7 @@ struct Track: Identifiable, Codable, Equatable, Sendable {
         id = try container.decode(UUID.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
         artist = try container.decodeIfPresent(String.self, forKey: .artist)
+        album = try container.decodeIfPresent(String.self, forKey: .album)
         artworkData = try container.decodeIfPresent(Data.self, forKey: .artworkData)
         fileName = try container.decode(String.self, forKey: .fileName)
         dateAdded = try container.decode(Date.self, forKey: .dateAdded)
@@ -89,6 +100,7 @@ struct Track: Identifiable, Codable, Equatable, Sendable {
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
         try container.encodeIfPresent(artist, forKey: .artist)
+        try container.encodeIfPresent(album, forKey: .album)
         try container.encodeIfPresent(artworkData, forKey: .artworkData)
         try container.encode(fileName, forKey: .fileName)
         try container.encode(dateAdded, forKey: .dateAdded)

@@ -67,7 +67,7 @@ struct LegacyCarToolsView: View {
                         Image(systemName: "slider.horizontal.3")
                             .foregroundStyle(theme.secondaryAccent)
                             .frame(width: 32, height: 32)
-                            .background(Color.black.opacity(0.04))
+                            .background(theme.surface)
                             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
 
                         VStack(alignment: .leading, spacing: 4) {
@@ -84,7 +84,7 @@ struct LegacyCarToolsView: View {
                         Spacer()
                     }
                     .padding(12)
-                    .background(Color.black.opacity(0.04))
+                    .background(theme.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)

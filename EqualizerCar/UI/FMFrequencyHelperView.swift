@@ -25,7 +25,7 @@ struct FMFrequencyHelperView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
-                    .background(Color.black.opacity(0.04))
+                    .background(theme.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
             }

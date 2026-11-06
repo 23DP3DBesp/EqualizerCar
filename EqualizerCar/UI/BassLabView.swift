@@ -9,9 +9,12 @@ struct BassLabView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 bassBands
+                bassDriveControls
                 virtualSubwooferControls
                 cabinResonanceControls
                 subwooferControls
+                dynamicsControls
+                protectionControls
                 LoudnessMeterView(audioManager: audioManager)
             }
             .padding(20)
@@ -41,7 +44,7 @@ struct BassLabView: View {
                 set: { audioManager.applySmartLoudBassMode($0) }
             )) {
                 ForEach(SmartLoudBassMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.localizedTitle).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
@@ -76,6 +79,51 @@ struct BassLabView: View {
         }
     }
 
+    private var bassDriveControls: some View {
+        panel(title: "Bass Drive", icon: "waveform.path") {
+            toggleRow("Bass Boost", icon: "speaker.wave.3.fill", isOn: $audioManager.bassBoostEnabled)
+            valueSlider(title: "Intensity", value: $audioManager.bassBoostIntensity, range: 0...12, step: 0.5) { String(format: "%.1f dB", $0) }
+                .disabled(!audioManager.bassBoostEnabled)
+            valueSlider(title: "Center Frequency", value: $audioManager.bassBoostFrequency, range: 35...160, step: 1) { "\(Int($0)) Hz" }
+                .disabled(!audioManager.bassBoostEnabled)
+            toggleRow("Adaptive Bass", icon: "waveform.path.ecg", isOn: $audioManager.adaptiveBassBoostEnabled)
+            Text("Адаптивный режим уменьшает усиление при высоком уровне сигнала.")
+                .font(.caption).foregroundStyle(theme.mutedInk)
+        }
+    }
+
+    private var dynamicsControls: some View {
+        panel(title: "Bass Dynamics", icon: "waveform") {
+            toggleRow("Compressor", icon: "arrow.down.right.and.arrow.up.left", isOn: $audioManager.compressorEnabled)
+            valueSlider(title: "Threshold", value: $audioManager.compressorThreshold, range: -36 ... -6, step: 1) { "\(Int($0)) dB" }
+                .disabled(!audioManager.compressorEnabled)
+            valueSlider(title: "Ratio", value: $audioManager.compressorRatio, range: 1...10, step: 0.1) { String(format: "%.1f:1", $0) }
+                .disabled(!audioManager.compressorEnabled)
+            valueSlider(title: "Attack", value: $audioManager.compressorAttack, range: 0.001...0.1, step: 0.001) { "\(Int($0 * 1000)) ms" }
+                .disabled(!audioManager.compressorEnabled)
+            valueSlider(title: "Release", value: $audioManager.compressorRelease, range: 0.02...0.5, step: 0.01) { "\(Int($0 * 1000)) ms" }
+                .disabled(!audioManager.compressorEnabled)
+            toggleRow("Multiband Compressor", icon: "slider.vertical.3", isOn: $audioManager.multibandCompressorEnabled)
+            toggleRow("Soft Clipper", icon: "waveform.badge.mic", isOn: $audioManager.softClipperEnabled)
+        }
+    }
+
+    private var protectionControls: some View {
+        panel(title: "Bass Protection", icon: "checkmark.shield.fill") {
+            toggleRow("Subsonic Filter", icon: "line.3.horizontal.decrease", isOn: $audioManager.subsonicEnabled)
+            valueSlider(title: "Cutoff", value: $audioManager.subsonicCutoff, range: 18...60, step: 1) { "\(Int($0)) Hz" }
+                .disabled(!audioManager.subsonicEnabled)
+            toggleRow("Clip Protection", icon: "shield.lefthalf.filled", isOn: $audioManager.clipperProtectionEnabled)
+            toggleRow("Limiter", icon: "speaker.wave.1", isOn: $audioManager.limiterEnabled)
+            valueSlider(title: "Ceiling", value: $audioManager.limiterCeiling, range: -12 ... -0.1, step: 0.1) { String(format: "%.1f dB", $0) }
+                .disabled(!audioManager.limiterEnabled)
+            valueSlider(title: "Release", value: $audioManager.limiterRelease, range: 0.01...0.3, step: 0.01) { "\(Int($0 * 1000)) ms" }
+                .disabled(!audioManager.limiterEnabled)
+            Text("Subsonic-фильтр убирает инфранизкий сигнал, который расходует запас хода динамика без заметного баса.")
+                .font(.caption).foregroundStyle(theme.mutedInk)
+        }
+    }
+
     private var virtualSubwooferControls: some View {
         panel(title: "Virtual Subwoofer", icon: "speaker.wave.2.bubble.left.fill") {
             toggleRow("Missing Fundamental", icon: "waveform.path.badge.plus", isOn: $audioManager.virtualSubwooferEnabled)
@@ -100,7 +148,7 @@ struct BassLabView: View {
 
     private func panel<Content: View>(title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: icon)
+            Label(LocalizedStringKey(title), systemImage: icon)
                 .font(.headline)
                 .foregroundStyle(theme.ink)
             content()
@@ -118,7 +166,7 @@ struct BassLabView: View {
         VStack(alignment: .leading, spacing: 7) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.ink)
                     Text(subtitle)
@@ -137,7 +185,7 @@ struct BassLabView: View {
 
     private func valueSlider(title: String, value: Binding<Float>, range: ClosedRange<Float>, step: Float, formatter: @escaping (Float) -> String) -> some View {
         HStack(spacing: 10) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.mutedInk)
                 .frame(width: 112, alignment: .leading)
@@ -152,7 +200,7 @@ struct BassLabView: View {
 
     private func toggleRow(_ title: String, icon: String, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
-            Label(title, systemImage: icon)
+            Label(LocalizedStringKey(title), systemImage: icon)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(theme.ink)
         }

@@ -1,8 +1,20 @@
 import Combine
 import SwiftUI
 
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case system, day, night
+    var id: String { rawValue }
+    var title: String { switch self { case .system: "Как в системе"; case .day: "День"; case .night: "Ночь" } }
+    var icon: String { switch self { case .system: "circle.lefthalf.filled"; case .day: "sun.max"; case .night: "moon" } }
+    var colorScheme: ColorScheme? { switch self { case .system: nil; case .day: .light; case .night: .dark } }
+}
+
 @MainActor
 final class ThemeManager: ObservableObject {
+    @Published var appearance: AppAppearance {
+        didSet { userDefaults.set(appearance.rawValue, forKey: "appearance.mode") }
+    }
+    @Published var systemColorScheme: ColorScheme = .light
     @Published private(set) var selectedThemeID: String
     @Published var customTheme: AppTheme {
         didSet { persistCustomTheme() }
@@ -16,18 +28,25 @@ final class ThemeManager: ObservableObject {
 
     init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
+        appearance = AppAppearance(rawValue: userDefaults.string(forKey: "appearance.mode") ?? "night") ?? .system
         if !userDefaults.bool(forKey: "studioWhiteMigration") {
             userDefaults.set(AppTheme.liquidGlassDark.id, forKey: Keys.selectedThemeID)
             userDefaults.set(true, forKey: "studioWhiteMigration")
         }
-        selectedThemeID = userDefaults.string(forKey: Keys.selectedThemeID) ?? AppTheme.liquidGlassDark.id
+        var initialID = userDefaults.string(forKey: Keys.selectedThemeID) ?? AppTheme.studio.id
+        if !userDefaults.bool(forKey: "studioDesignMigration") {
+            if initialID == AppTheme.liquidGlassDark.id { initialID = AppTheme.studio.id }
+            userDefaults.set(initialID, forKey: Keys.selectedThemeID)
+            userDefaults.set(true, forKey: "studioDesignMigration")
+        }
+        selectedThemeID = initialID
         if let data = userDefaults.data(forKey: Keys.customTheme),
            let decodedTheme = try? JSONDecoder().decode(AppTheme.self, from: data) {
             customTheme = decodedTheme
         } else {
             customTheme = AppTheme(
                 id: "custom-ambient",
-                displayName: "Custom Ambient",
+                displayName: "Своя тема",
                 style: .modernGlass,
                 accentColor: ThemeColor(red: 1.00, green: 0.58, blue: 0.18),
                 secondaryAccentColor: ThemeColor(red: 1.00, green: 0.84, blue: 0.52),
@@ -45,7 +64,8 @@ final class ThemeManager: ObservableObject {
     }
 
     var current: AppTheme {
-        availableThemes.first { $0.id == selectedThemeID } ?? AppTheme.liquidGlassDark
+        let palette = availableThemes.first { $0.id == selectedThemeID } ?? AppTheme.liquidGlassDark
+        return palette.resolved(dark: (appearance.colorScheme ?? systemColorScheme) == .dark)
     }
 
     var isUsingCustomTheme: Bool {
@@ -107,7 +127,7 @@ private extension ThemeColor {
 }
 
 private struct CarAmbientThemeKey: EnvironmentKey {
-    static let defaultValue = AppTheme.liquidGlassDark
+    static let defaultValue = AppTheme.studio
 }
 
 extension EnvironmentValues {
@@ -119,13 +139,18 @@ extension EnvironmentValues {
 
 struct CarAmbientThemeModifier: ViewModifier {
     @ObservedObject var manager: ThemeManager
+    @Environment(\.colorScheme) private var systemScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
             .environment(\.carAmbientTheme, manager.current)
             .environmentObject(manager)
             .tint(manager.current.accent)
-            .animation(.easeInOut(duration: 0.22), value: manager.current.id)
+            .preferredColorScheme(manager.appearance.colorScheme)
+            .onAppear { manager.systemColorScheme = systemScheme }
+            .onChange(of: systemScheme) { _, scheme in manager.systemColorScheme = scheme }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: manager.appearance)
     }
 }
 

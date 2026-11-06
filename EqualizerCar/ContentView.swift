@@ -45,7 +45,14 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @Environment(\.horizontalSizeClass) private var sizeClass
-    @State private var selectedTab = 0
+    @State private var selectedTab: Int = {
+#if DEBUG
+        let requested = UserDefaults.standard.integer(forKey: "studio.previewTab")
+        return (0...4).contains(requested) ? requested : 0
+#else
+        return 0
+#endif
+    }()
 
     @State private var activeImporter: ActiveImporter?
     @State private var isImporterPresented = false
@@ -55,6 +62,8 @@ struct ContentView: View {
     @State private var backupExportDocument = AppBackupDocument()
     @State private var showSavePresetAlert = false
     @State private var newPresetName = ""
+    @State private var importReviewItems: [LibraryManager.ImportCandidate] = []
+    @State private var showImportReview = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -66,12 +75,12 @@ struct ContentView: View {
                     library: library,
                     presetManager: presetManager,
                     addMusicAction: { presentImporter(.track) },
-                    openLibraryAction: { selectedTab = 1 }
+                    openLibraryAction: { selectedTab = 1 },
+                    openPlayerAction: { selectedTab = 4 }
                 )
             }
-            .miniPlayerInset(audioManager: audioManager, library: library, presetManager: presetManager)
             .tabItem {
-                Label("Player", systemImage: "play.circle.fill")
+                Label("Home", systemImage: "house")
             }
             .tag(0)
 
@@ -91,62 +100,51 @@ struct ContentView: View {
                     )
                 )
             }
-            .miniPlayerInset(audioManager: audioManager, library: library, presetManager: presetManager)
             .tabItem {
                 Label("Library", systemImage: "music.note.list")
             }
             .tag(1)
 
             NavigationStack {
+                NowPlayingView(audioManager: audioManager, library: library, presetManager: presetManager, embedded: true)
+            }
+            .tabItem { Label("Player", systemImage: "play.circle") }
+            .tag(4)
+
+            NavigationStack {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        EqualizerTabView(audioManager: audioManager, isEmbedded: true)
+                        EqualizerTabView(audioManager: audioManager, presetManager: presetManager, isEmbedded: true)
                         EffectsPanelView(audioManager: audioManager)
                     }
                     .padding(20)
                 }
                 .background(themeManager.current.screenBackground.ignoresSafeArea())
-                .navigationTitle("Effects")
+                .navigationTitle("Equalizer")
             }
-            .miniPlayerInset(audioManager: audioManager, library: library, presetManager: presetManager)
             .tabItem {
-                Label("Effects", systemImage: "dial.high.fill")
+                Label("Equalizer", systemImage: "slider.vertical.3")
             }
             .tag(2)
 
             NavigationStack {
-                List {
-                    Section("Sound") {
-                        NavigationLink("Bass Lab") { BassLabView(audioManager: audioManager) }
-                        NavigationLink("Presets") {
-                            PresetsPanelView(audioManager: audioManager, presetManager: presetManager,
-                                showSavePresetAlert: $showSavePresetAlert,
-                                importAction: { presentImporter(.preset) }, exportAction: exportPresets)
-                        }
-                    }
-                    Section("Tools") {
-                        NavigationLink("Car Tools") {
-                            LegacyCarToolsView(audioManager: audioManager, library: library, presetManager: presetManager)
-                        }
-                        NavigationLink("Drive Mode") {
-                            DriveModeView(audioManager: audioManager, library: library,
-                                presetManager: presetManager, addMusicAction: { presentImporter(.track) })
-                        }
-                        NavigationLink("Settings") {
-                            SettingsPanelView(audioManager: audioManager, library: library,
-                                importBackupAction: { presentImporter(.backup) }, exportBackupAction: exportBackup)
-                        }
-                    }
-                }
-                .scrollContentBackground(.hidden)
-                .background(Color.white)
-                .navigationTitle("More")
+                StudioSettingsView(audio: audioManager, library: library, presets: presetManager,
+                    showSavePreset: $showSavePresetAlert,
+                    importPresets: { presentImporter(.preset) }, exportPresets: exportPresets,
+                    importBackup: { presentImporter(.backup) }, exportBackup: exportBackup)
             }
-            .miniPlayerInset(audioManager: audioManager, library: library, presetManager: presetManager)
-            .tabItem { Label("More", systemImage: "ellipsis") }
+            .tabItem { Label("Settings", systemImage: "gearshape") }
             .tag(3)
         }
-            .toolbar(sizeClass == .regular ? .hidden : .visible, for: .tabBar)
+            .toolbar(.hidden, for: .tabBar)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                if selectedTab != 4, audioManager.currentTrackID != nil {
+                    MiniPlayerBar(audioManager: audioManager, library: library, presetManager: presetManager, openPlayer: { selectedTab = 4 })
+                }
+                if sizeClass != .regular { StudioBottomNavigation(selection: $selectedTab) }
+            }.background(themeManager.current.background)
         }
         .disabled(library.isLoadingLibrary)
         .overlay {
@@ -155,8 +153,8 @@ struct ContentView: View {
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
             }
         }
-        .preferredColorScheme(.light)
         .carAmbientTheme(themeManager)
+        .environment(\.locale, Locale(identifier: "ru"))
         .fileImporter(
             isPresented: $isImporterPresented,
             allowedContentTypes: activeImporter?.allowedContentTypes ?? [.data],
@@ -170,7 +168,8 @@ struct ContentView: View {
             case .success(let urls):
                 switch importer {
                 case .track:
-                    library.importFiles(from: urls)
+                    importReviewItems = library.inspectImportFiles(urls)
+                    showImportReview = true
                 case .preset:
                     guard let url = urls.first else { return }
                     importPresets(from: url)
@@ -203,6 +202,19 @@ struct ContentView: View {
             if case .failure(let error) = result {
                 print("Ошибка экспорта backup: \(error)")
             }
+        }
+        .modifier(PlaybackErrorPresenter(audioManager: audioManager))
+        .sheet(isPresented: $showImportReview, onDismiss: {
+            if !importReviewItems.isEmpty { library.cancelImportReview() }
+            importReviewItems = []
+        }) {
+            ImportReviewView(items: $importReviewItems, onCancel: {
+                showImportReview = false
+            }, onImport: {
+                library.importSelectedFiles(importReviewItems)
+                importReviewItems = []
+                showImportReview = false
+            })
         }
         .alert("Сохранить пресет", isPresented: $showSavePresetAlert) {
             TextField("Название пресета", text: $newPresetName)
@@ -267,8 +279,9 @@ struct ContentView: View {
             sidebarItem("Recently Played", icon: "clock", tab: 1, section: "Recent")
             sidebarItem("Playlists", icon: "square.stack", tab: 1, section: "Playlists")
             Divider().padding(.vertical, 14)
-            sidebarItem("Effects", icon: "slider.horizontal.3", tab: 2)
-            sidebarItem("More", icon: "ellipsis", tab: 3)
+            sidebarItem("Player", icon: "play.circle", tab: 4)
+            sidebarItem("Equalizer", icon: "slider.horizontal.3", tab: 2)
+            sidebarItem("Settings", icon: "gearshape", tab: 3)
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(library.playlists) { playlist in
@@ -291,8 +304,8 @@ struct ContentView: View {
         }
         .padding(.horizontal, 18)
         .frame(width: 220)
-        .background(Color(white: 0.98))
-        .overlay(alignment: .trailing) { Rectangle().fill(Color.black.opacity(0.06)).frame(width: 1) }
+        .background(themeManager.current.surface)
+        .overlay(alignment: .trailing) { Rectangle().fill(themeManager.current.separator).frame(width: 1) }
     }
 
     private func sidebarItem(_ title: String, icon: String, tab: Int, section: String? = nil) -> some View {
@@ -367,6 +380,53 @@ struct ContentView: View {
     }
 }
 
+private struct ImportReviewView: View {
+    @Binding var items: [LibraryManager.ImportCandidate]
+    let onCancel: () -> Void
+    let onImport: () -> Void
+    private var selectedCount: Int { items.filter(\.isSelected).count }
+    private var totalBytes: Int64 { items.filter(\.isSelected).reduce(0) { $0 + $1.size } }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Сводка") {
+                    LabeledContent("Выбрано", value: "\(selectedCount) из \(items.count)")
+                    LabeledContent("Размер", value: ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file))
+                }
+                Section("Файлы") {
+                    ForEach(items.indices, id: \.self) { index in
+                        HStack(spacing: 12) {
+                            Button {
+                                items[index].isSelected.toggle()
+                            } label: {
+                                Image(systemName: items[index].isSelected ? "checkmark.circle.fill" : "circle")
+                                    .font(.title3)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!items[index].readable || items[index].duplicate)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(items[index].url.lastPathComponent).lineLimit(1)
+                                Text("\(items[index].status) · \(ByteCountFormatter.string(fromByteCount: items[index].size, countStyle: .file))")
+                                    .font(.caption).foregroundStyle(items[index].duplicate || !items[index].readable ? .orange : .secondary)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 3)
+                    }
+                }
+            }
+            .navigationTitle("Импорт музыки")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Отмена", action: onCancel) }
+                ToolbarItem(placement: .confirmationAction) { Button("Импортировать (\(selectedCount))", action: onImport).disabled(selectedCount == 0) }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
 @MainActor
 private final class AudioEngineOwner: ObservableObject {
     let objectWillChange = ObservableObjectPublisher()
@@ -392,4 +452,19 @@ private extension View {
 
 #Preview {
     ContentView()
+}
+
+private struct PlaybackErrorPresenter: ViewModifier {
+    @ObservedObject var audioManager: AudioEngineManager
+
+    func body(content: Content) -> some View {
+        content.alert("Не удалось воспроизвести", isPresented: Binding(
+            get: { audioManager.playbackError != nil },
+            set: { if !$0 { audioManager.playbackError = nil } }
+        )) {
+            Button("OK", role: .cancel) { audioManager.playbackError = nil }
+        } message: {
+            Text(audioManager.playbackError ?? "")
+        }
+    }
 }

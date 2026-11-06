@@ -4,6 +4,7 @@ import SwiftData
 import AVFoundation
 import UIKit
 import ImageIO
+import CryptoKit
 
 @MainActor
 class LibraryManager: ObservableObject {
@@ -18,6 +19,19 @@ class LibraryManager: ObservableObject {
         case favoritesFirst = "Favorites First"
 
         var id: String { rawValue }
+
+        var localizedTitle: String {
+            switch self {
+            case .titleAscending: return "Название: А—Я"
+            case .titleDescending: return "Название: Я—А"
+            case .newestFirst: return "Сначала новые"
+            case .oldestFirst: return "Сначала старые"
+            case .longestFirst: return "Сначала длинные"
+            case .shortestFirst: return "Сначала короткие"
+            case .recentlyPlayed: return "Недавно прослушанные"
+            case .favoritesFirst: return "Сначала избранное"
+            }
+        }
     }
 
     enum RepeatMode: String, CaseIterable, Identifiable {
@@ -26,6 +40,14 @@ class LibraryManager: ObservableObject {
         case all = "All"
 
         var id: String { rawValue }
+
+        var localizedTitle: String {
+            switch self {
+            case .off: return "Выкл."
+            case .one: return "Один трек"
+            case .all: return "Все треки"
+            }
+        }
     }
 
     enum PlaybackSource: Equatable {
@@ -43,6 +65,24 @@ class LibraryManager: ObservableObject {
         didSet { rebuildTrackCaches() }
     }
     @Published var importErrorMessage: String?
+    private var importAccessURLs: [URL] = []
+    struct ImportCandidate: Identifiable {
+        let id: UUID
+        let url: URL
+        let size: Int64
+        let duplicate: Bool
+        let readable: Bool
+        var isSelected: Bool
+        var status: String { !readable ? "Не удалось прочитать файл" : duplicate ? "Уже есть в медиатеке" : "Готов к импорту" }
+    }
+    enum LibraryIssueKind: String, Sendable {
+        case missingFile, unreadableAudio, invalidDuration, unreadableMetadata, incompleteMetadata
+    }
+    struct LibraryHealthIssue: Identifiable, Sendable {
+        let track: Track
+        let kind: LibraryIssueKind
+        var id: String { "\(track.id.uuidString)-\(kind.rawValue)" }
+    }
     @Published private(set) var isLoadingLibrary = true
     @Published var isImporting = false
     @Published var searchText = "" {
@@ -71,7 +111,7 @@ class LibraryManager: ObservableObject {
     private var pendingIndexWrite: DispatchWorkItem?
     private var metadataTask: Task<Void, Never>?
     private var pendingMetadataIDs = Set<UUID>()
-    private var checkedMetadataIDs: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "checkedAudioMetadata") ?? [])
+    private var checkedMetadataIDs: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "checkedAudioMetadataWithAlbum") ?? [])
 
     private var modelContext: ModelContext?
     private var trackIndexByID: [UUID: Track] = [:]
@@ -124,6 +164,7 @@ class LibraryManager: ObservableObject {
         let id: UUID
         var inspected = false
         var artist: String?
+        var album: String?
         var artwork: Data?
     }
 
@@ -134,6 +175,7 @@ class LibraryManager: ObservableObject {
         guard let metadata = try? await asset.load(.commonMetadata) else { return result }
         result.inspected = true
         for item in metadata {
+            if item.commonKey == .commonKeyAlbumName { result.album = try? await item.load(.stringValue) }
             if item.commonKey == .commonKeyArtist { result.artist = try? await item.load(.stringValue) }
             if item.commonKey == .commonKeyArtwork,
                let data = try? await item.load(.dataValue),
@@ -155,7 +197,7 @@ class LibraryManager: ObservableObject {
 
     private func enqueueMetadata(_ candidates: [Track]) {
         pendingMetadataIDs.formUnion(candidates.filter {
-            !checkedMetadataIDs.contains($0.id.uuidString) && ($0.artist == nil || $0.artworkData == nil)
+            !checkedMetadataIDs.contains($0.id.uuidString) && ($0.artist == nil || $0.artworkData == nil || $0.album == nil)
         }.map(\.id))
         guard metadataTask == nil, !pendingMetadataIDs.isEmpty else { return }
         metadataTask = Task { [weak self] in
@@ -178,6 +220,7 @@ class LibraryManager: ObservableObject {
                     guard let index = indices[result.id] else { continue }
                     var track = updated[index]
                     track.artist = result.artist ?? track.artist
+                    track.album = result.album ?? track.album
                     track.artworkData = result.artwork ?? track.artworkData
                     if track != updated[index] { updated[index] = track; changed.append(track) }
                 }
@@ -186,7 +229,7 @@ class LibraryManager: ObservableObject {
                     saveTracksToSwiftData(changed)
                     saveIndex()
                 }
-                UserDefaults.standard.set(Array(checkedMetadataIDs), forKey: "checkedAudioMetadata")
+                UserDefaults.standard.set(Array(checkedMetadataIDs), forKey: "checkedAudioMetadataWithAlbum")
             }
         }
     }
@@ -231,6 +274,41 @@ class LibraryManager: ObservableObject {
         saveIndex()
     }
 
+    func inspectImportFiles(_ sourceURLs: [URL]) -> [ImportCandidate] {
+        var knownHashes = Set(tracks.compactMap { fileHash(at: $0.fileURL) })
+        return sourceURLs.map { url in
+            let accessed = url.startAccessingSecurityScopedResource()
+            if accessed { importAccessURLs.append(url) }
+            let values = try? url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+            let hash = fileHash(at: url)
+            let readable = values?.isRegularFile == true && hash != nil
+            let duplicate = hash.map { !knownHashes.insert($0).inserted } ?? false
+            return ImportCandidate(id: UUID(), url: url, size: Int64(values?.fileSize ?? 0), duplicate: duplicate, readable: readable, isSelected: readable && !duplicate)
+        }
+    }
+
+    func importSelectedFiles(_ candidates: [ImportCandidate]) {
+        importFiles(from: candidates.filter { $0.isSelected && $0.readable && !$0.duplicate }.map(\.url))
+        releaseImportAccess()
+    }
+
+    func cancelImportReview() { releaseImportAccess() }
+
+    private func releaseImportAccess() {
+        importAccessURLs.forEach { $0.stopAccessingSecurityScopedResource() }
+        importAccessURLs.removeAll()
+    }
+
+    private func fileHash(at url: URL) -> String? {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+        var hasher = SHA256()
+        while let chunk = try? handle.read(upToCount: 1_048_576), !chunk.isEmpty {
+            hasher.update(data: chunk)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
     private func importSingleFile(from sourceURL: URL) -> Track? {
         let previousErrorMessage = importErrorMessage
 
@@ -270,6 +348,162 @@ class LibraryManager: ObservableObject {
         removeTrackFromAllPlaylists(track.id)
         deleteTrackFromSwiftData(track)
         saveIndex()
+    }
+
+    func deleteTracks(_ tracksToDelete: [Track]) {
+        let ids = Set(tracksToDelete.map(\.id))
+        guard !ids.isEmpty else { return }
+        for track in tracksToDelete {
+            try? FileManager.default.removeItem(at: track.fileURL)
+        }
+        deleteTracksFromSwiftData(ids: ids)
+        tracks.removeAll { ids.contains($0.id) }
+        queueIDs.removeAll { ids.contains($0) }
+        var playlistsChanged = false
+        playlists = playlists.map { playlist in
+            var updated = playlist
+            let previousCount = updated.trackIDs.count
+            updated.trackIDs.removeAll { ids.contains($0) }
+            if updated.trackIDs.count != previousCount {
+                updated.updatedAt = Date()
+                playlistsChanged = true
+            }
+            return updated
+        }
+        if playlistsChanged { savePlaylists() }
+        saveIndex()
+    }
+
+    func findDuplicateTrackGroups() async -> [[Track]] {
+        let snapshot = tracks
+        let libraryFolder = Self.libraryFolderURL
+        return await Task.detached(priority: .utility) {
+            var groups: [String: [Track]] = [:]
+            for track in snapshot {
+                let fileURL = libraryFolder.appendingPathComponent(track.fileName)
+                guard let handle = try? FileHandle(forReadingFrom: fileURL) else { continue }
+                defer { try? handle.close() }
+                var hasher = SHA256()
+                while let chunk = try? handle.read(upToCount: 1_048_576), !chunk.isEmpty {
+                    hasher.update(data: chunk)
+                }
+                let hash = hasher.finalize().map { String(format: "%02x", $0) }.joined()
+                groups[hash, default: []].append(track)
+            }
+            return groups.values
+                .filter { $0.count > 1 }
+                .map { $0.sorted { $0.dateAdded < $1.dateAdded } }
+                .sorted { ($0.first?.title ?? "") < ($1.first?.title ?? "") }
+        }.value
+    }
+
+    var unavailableTracks: [Track] {
+        tracks.filter { !FileManager.default.fileExists(atPath: $0.fileURL.path) }
+    }
+
+    var unusedTracks: [Track] {
+        let referencedIDs = Set(playlists.flatMap(\.trackIDs))
+        return tracks.filter { !$0.isFavorite && !referencedIDs.contains($0.id) }
+    }
+
+    func scanLibraryHealth() async -> [LibraryHealthIssue] {
+        let snapshot = tracks
+        let libraryFolder = Self.libraryFolderURL
+        return await Task.detached(priority: .utility) {
+            var issues: [LibraryHealthIssue] = []
+            for track in snapshot {
+                let url = libraryFolder.appendingPathComponent(track.fileName)
+                guard FileManager.default.fileExists(atPath: url.path) else {
+                    issues.append(LibraryHealthIssue(track: track, kind: .missingFile))
+                    continue
+                }
+                do {
+                    let file = try AVAudioFile(forReading: url)
+                    let realDuration = Double(file.length) / file.processingFormat.sampleRate
+                    guard realDuration.isFinite, realDuration > 0 else {
+                        issues.append(LibraryHealthIssue(track: track, kind: .unreadableAudio))
+                        continue
+                    }
+                    if !track.duration.isFinite || track.duration <= 0 {
+                        issues.append(LibraryHealthIssue(track: track, kind: .invalidDuration))
+                    }
+                } catch {
+                    issues.append(LibraryHealthIssue(track: track, kind: .unreadableAudio))
+                    continue
+                }
+
+                let metadata = await Self.readMetadata(id: track.id, url: url)
+                if !metadata.inspected {
+                    issues.append(LibraryHealthIssue(track: track, kind: .unreadableMetadata))
+                } else {
+                    let hasArtist = !(metadata.artist ?? track.artist ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    let hasAlbum = !(metadata.album ?? track.album ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    let hasTitle = !track.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    if !hasTitle || (!hasArtist && !hasAlbum) {
+                        issues.append(LibraryHealthIssue(track: track, kind: .incompleteMetadata))
+                    }
+                }
+            }
+            return issues
+        }.value
+    }
+
+    func repairDuration(for track: Track) async -> Bool {
+        let url = track.fileURL
+        let duration = await Task.detached(priority: .utility) {
+            guard let file = try? AVAudioFile(forReading: url) else { return nil as Double? }
+            let value = Double(file.length) / file.processingFormat.sampleRate
+            return value.isFinite && value > 0 ? value : nil
+        }.value
+        guard let duration, let index = tracks.firstIndex(where: { $0.id == track.id }) else { return false }
+        tracks[index].duration = duration
+        saveTrackToSwiftData(tracks[index])
+        saveIndex()
+        return true
+    }
+
+    func refreshMetadata(for track: Track) {
+        guard let index = tracks.firstIndex(where: { $0.id == track.id }) else { return }
+        if tracks[index].title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            tracks[index].title = URL(fileURLWithPath: track.fileName).deletingPathExtension().lastPathComponent
+        }
+        checkedMetadataIDs.remove(track.id.uuidString)
+        enqueueMetadata([tracks[index]])
+        saveTrackToSwiftData(tracks[index])
+        saveIndex()
+    }
+
+    func replaceAudioFile(for track: Track, with sourceURL: URL) -> Bool {
+        guard let index = tracks.firstIndex(where: { $0.id == track.id }) else { return false }
+        let didStartAccess = sourceURL.startAccessingSecurityScopedResource()
+        defer { if didStartAccess { sourceURL.stopAccessingSecurityScopedResource() } }
+        let destination = track.fileURL
+        let staged = Self.libraryFolderURL.appendingPathComponent(".replacement-\(UUID().uuidString).audio")
+        do {
+            try copyImportedFile(from: sourceURL, to: staged)
+            let replacement = try AVAudioFile(forReading: staged)
+            let duration = Double(replacement.length) / replacement.processingFormat.sampleRate
+            guard duration.isFinite, duration > 0 else { throw CocoaError(.fileReadCorruptFile) }
+            if FileManager.default.fileExists(atPath: destination.path) {
+                _ = try FileManager.default.replaceItemAt(destination, withItemAt: staged)
+            } else {
+                try FileManager.default.moveItem(at: staged, to: destination)
+            }
+            tracks[index].duration = duration
+            if tracks[index].title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                tracks[index].title = sourceURL.deletingPathExtension().lastPathComponent
+            }
+            checkedMetadataIDs.remove(track.id.uuidString)
+            enqueueMetadata([tracks[index]])
+            saveTrackToSwiftData(tracks[index])
+            saveIndex()
+            importErrorMessage = nil
+            return true
+        } catch {
+            try? FileManager.default.removeItem(at: staged)
+            importErrorMessage = "Не удалось заменить файл для «\(track.title)»: \(error.localizedDescription)"
+            return false
+        }
     }
 
     func deleteAllTracks() {
@@ -335,7 +569,7 @@ class LibraryManager: ObservableObject {
         case .playlist(let id): members = self.tracks(for: playlists.first { $0.id == id }?.trackIDs ?? [])
         }
         let allowedIDs = members.filter {
-            playbackQuery.isEmpty || $0.title.localizedCaseInsensitiveContains(playbackQuery)
+            $0.matchesSearch(playbackQuery)
         }.map(\.id)
         let allowed = Set(allowedIDs)
         var reconciled = playbackIDs.filter { allowed.contains($0) }
@@ -356,6 +590,7 @@ class LibraryManager: ObservableObject {
         }
         persistCurrentTrackPresetIfNeeded(audioManager: audioManager)
         audioManager.load(track: track)
+        guard audioManager.playbackError == nil else { return }
         if perTrackPresetsEnabled, let snapshot = track.presetSnapshot {
             audioManager.applyTrackPresetSnapshot(snapshot)
         }
@@ -488,7 +723,7 @@ class LibraryManager: ObservableObject {
         if query.isEmpty {
             matchingTracks = tracks
         } else {
-            matchingTracks = tracks.filter { $0.title.localizedCaseInsensitiveContains(query) }
+            matchingTracks = tracks.filter { $0.matchesSearch(query) }
         }
         reconcilePlaybackQueue()
         filteredTracksCache = sortedTracks(matchingTracks)
@@ -645,6 +880,7 @@ class LibraryManager: ObservableObject {
             id: oldTrack.id,
             title: oldTrack.title,
             artist: oldTrack.artist,
+            album: oldTrack.album,
             artworkData: oldTrack.artworkData,
             fileName: oldTrack.fileName,
             dateAdded: oldTrack.dateAdded,
@@ -774,6 +1010,19 @@ class LibraryManager: ObservableObject {
         }
     }
 
+    private func deleteTracksFromSwiftData(ids: Set<UUID>) {
+        guard let modelContext, !ids.isEmpty else { return }
+        do {
+            let descriptor = FetchDescriptor<StoredTrack>()
+            for storedTrack in try modelContext.fetch(descriptor) where ids.contains(storedTrack.id) {
+                modelContext.delete(storedTrack)
+            }
+            try modelContext.save()
+        } catch {
+            print("Ошибка пакетного удаления треков из SwiftData: \(error)")
+        }
+    }
+
     private func migrateJSONTracksToSwiftData() {
         guard modelContext != nil else { return }
         saveTracksToSwiftData(tracks)
@@ -785,6 +1034,7 @@ class LibraryManager: ObservableObject {
             id: track.id,
             title: track.title,
             artist: track.artist,
+            album: track.album,
             artworkData: track.artworkData,
             fileName: track.fileName,
             dateAdded: track.dateAdded,

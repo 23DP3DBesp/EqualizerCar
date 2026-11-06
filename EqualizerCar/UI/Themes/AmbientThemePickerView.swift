@@ -6,9 +6,18 @@ struct AmbientThemePickerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("Ambient Sync & Theme", systemImage: "lightbulb.led.fill")
+            Label("Оформление", systemImage: "circle.lefthalf.filled")
                 .font(.headline)
                 .foregroundStyle(themeManager.current.ink)
+
+            Picker("Тема", selection: $themeManager.appearance) {
+                ForEach(AppAppearance.allCases) { appearance in
+                    Text(appearance.title).tag(appearance)
+                }
+            }
+            .pickerStyle(.segmented)
+            Text("Дневная — светлая и контрастная. Ночная — мягкая графитовая. Системная меняется вместе с iPhone.")
+                .font(.subheadline).foregroundStyle(themeManager.current.mutedInk)
 
             livePreview
 
@@ -18,7 +27,7 @@ struct AmbientThemePickerView: View {
                 }
             }
 
-            customControls
+            DisclosureGroup("Настроить акценты") { customControls.padding(.top, 12) }
         }
         .padding(14)
         .themedPanel(cornerRadius: 12)
@@ -52,7 +61,7 @@ struct AmbientThemePickerView: View {
 
             Image(systemName: "play.fill")
                 .font(.headline.weight(.black))
-                .foregroundStyle(.black)
+                .foregroundStyle(themeManager.current.onAccent)
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(themeManager.current.accent))
         }
@@ -95,10 +104,10 @@ struct AmbientThemePickerView: View {
             }
             .padding(10)
             .frame(minHeight: 104, alignment: .topLeading)
-            .background(theme.surface.opacity(theme.id == themeManager.current.id ? 0.92 : 0.58))
+            .background(themeManager.current.background)
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(theme.id == themeManager.current.id ? theme.accent.opacity(0.75) : Color.black.opacity(0.04), lineWidth: 1)
+                    .stroke(theme.id == themeManager.current.id ? theme.accent.opacity(0.75) : themeManager.current.separator, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }

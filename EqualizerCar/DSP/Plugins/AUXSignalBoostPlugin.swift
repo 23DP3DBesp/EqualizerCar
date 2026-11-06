@@ -2,35 +2,14 @@ import AVFoundation
 
 @MainActor
 final class AUXSignalBoostPlugin: AudioEffectPlugin {
-    private enum Constants {
-        static let minimumGainDB: Float = 0
-        static let maximumGainDB: Float = 12
-    }
-
     let displayName = "AUX Signal Boost"
-    let eqNode = AVAudioUnitEQ(numberOfBands: 1)
-
-    var node: AVAudioNode { eqNode }
-
-    var isEnabled: Bool = false {
-        didSet { applyState() }
-    }
-
-    var gainDB: Float = 0 {
-        didSet { applyState() }
-    }
+    private let processor = RealtimeDSPNode(.gain)
+    var node: AVAudioNode { processor.node }
+    var isEnabled = false { didSet { processor.enable(isEnabled) } }
+    var gainDB: Float = 3 { didSet { processor.set(1, min(max(gainDB, 0), 12)) } }
 
     init() {
-        if let band = eqNode.bands.first {
-            band.filterType = .parametric
-            band.frequency = 1_000
-            band.bandwidth = 1
-            band.bypass = true
-        }
-        eqNode.globalGain = 0
-    }
-
-    private func applyState() {
-        eqNode.globalGain = isEnabled ? min(max(gainDB, Constants.minimumGainDB), Constants.maximumGainDB) : 0
+        processor.set(1, min(max(gainDB, 0), 12))
+        processor.enable(isEnabled)
     }
 }

@@ -3,168 +3,79 @@ import SwiftUI
 struct EqualizerCurveView: View {
     @ObservedObject var audioManager: AudioEngineManager
     @Environment(\.carAmbientTheme) private var theme
-
-    private let minGain: Float = -24
-    private let maxGain: Float = 24
-    private let minFreq: Float = 60
-    private let maxFreq: Float = 16_000
-
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
-        GeometryReader { geo in
+        GeometryReader { geometry in
             ZStack {
-                seaSpectrumPath(size: geo.size)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                theme.secondaryAccent.opacity(0.05),
-                                theme.accent.opacity(0.22)
-                            ],
-                            startPoint: .bottom,
-                            endPoint: .top
-                        )
-                    )
-                    .animation(.linear(duration: 0.08), value: audioManager.spectrumLevels)
-
-                zeroLine(size: geo.size)
-
-                equalizerFillPath(size: geo.size)
-                    .fill(theme.secondaryAccent.opacity(0.08))
-
-                equalizerPath(size: geo.size)
-                    .stroke(
-                        LinearGradient(colors: [theme.secondaryAccent, theme.secondaryAccent, theme.accent], startPoint: .leading, endPoint: .trailing),
-                        style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round)
-                    )
-
-                ForEach(Array(audioManager.bandFrequencies.enumerated()), id: \.offset) { index, _ in
-                    let point = position(forIndex: index, size: geo.size)
-                    Circle()
-                        .fill(theme.surface.opacity(0.96))
-                        .frame(width: 22, height: 22)
-                        .overlay(Circle().stroke(theme.secondaryAccent, lineWidth: 5))
-                        .shadow(color: theme.secondaryAccent.opacity(0.28), radius: 10, x: 0, y: 4)
-                        .position(point)
-                        .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { value in
-                                    audioManager.setBandGain(index: index, value: gain(forY: value.location.y, height: geo.size.height))
-                                }
-                        )
+                Path { path in
+                    for fraction in [0.0, 0.5, 1.0] {
+                        let y = geometry.size.height * fraction
+                        path.move(to: CGPoint(x: 0, y: y)); path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                    }
+                    for fraction in [0.0, 0.25, 0.5, 0.75, 1.0] {
+                        let x = geometry.size.width * fraction
+                        path.move(to: CGPoint(x: x, y: 0)); path.addLine(to: CGPoint(x: x, y: geometry.size.height))
+                    }
+                }.stroke(theme.separator, style: StrokeStyle(lineWidth: 0.5, dash: [3, 4]))
+                EQBandCurve(gains: EQGains(values: audioManager.bandGains.map(Double.init)), frequencies: audioManager.bandFrequencies, fill: true)
+                    .fill(LinearGradient(colors: [theme.accent.opacity(0.12), theme.accent.opacity(0.01)], startPoint: .top, endPoint: .bottom))
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: audioManager.bandGains)
+                EQBandCurve(gains: EQGains(values: audioManager.bandGains.map(Double.init)), frequencies: audioManager.bandFrequencies)
+                    .stroke(theme.accent, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: audioManager.bandGains)
+                ForEach(Array(audioManager.bandFrequencies.enumerated()), id: \.offset) { index, frequency in
+                    let gain = audioManager.bandGains.indices.contains(index) ? audioManager.bandGains[index] : 0
+                    Circle().fill(theme.accent).frame(width: 6, height: 6)
+                        .frame(width: 44, height: 44).contentShape(Rectangle())
+                        .position(x: CGFloat(log10(frequency / 35) / log10(16000 / Float(35))) * geometry.size.width,
+                                  y: CGFloat((24 - gain) / 48) * geometry.size.height)
+                        .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("EQChart")).onChanged { gesture in
+                            let value = 24 - Float(gesture.location.y / max(geometry.size.height, 1)) * 48
+                            audioManager.setBandGain(index: index, value: min(max(value, -24), 24))
+                        })
                 }
-            }
-            .contentShape(Rectangle())
+            }.coordinateSpace(name: "EQChart")
+        }.frame(height: 136).padding(.horizontal, 4)
+            .opacity(audioManager.isEqualizerEnabled ? 1 : 0.35).disabled(!audioManager.isEqualizerEnabled)
+            .accessibilityLabel("Equalizer curve; adjust individual bands below")
+    }
+}
+
+private struct EQGains: VectorArithmetic {
+    var values: [Double]
+    static var zero: EQGains { EQGains(values: []) }
+    static func + (lhs: EQGains, rhs: EQGains) -> EQGains { combine(lhs, rhs, sign: 1) }
+    static func - (lhs: EQGains, rhs: EQGains) -> EQGains { combine(lhs, rhs, sign: -1) }
+    private static func combine(_ lhs: EQGains, _ rhs: EQGains, sign: Double) -> EQGains {
+        EQGains(values: (0..<max(lhs.values.count, rhs.values.count)).map {
+            (lhs.values.indices.contains($0) ? lhs.values[$0] : 0) + sign * (rhs.values.indices.contains($0) ? rhs.values[$0] : 0)
+        })
+    }
+    mutating func scale(by rhs: Double) { values = values.map { $0 * rhs } }
+    var magnitudeSquared: Double { values.reduce(0) { $0 + $1 * $1 } }
+}
+
+private struct EQBandCurve: Shape {
+    var gains: EQGains
+    let frequencies: [Float]
+    var fill = false
+    var animatableData: EQGains { get { gains } set { gains = newValue } }
+    func path(in rect: CGRect) -> Path {
+        let points = frequencies.enumerated().map { index, frequency in
+            CGPoint(x: CGFloat(log10(frequency / 35) / log10(16000 / Float(35))) * rect.width,
+                    y: (24 - (gains.values.indices.contains(index) ? gains.values[index] : 0)) / 48 * rect.height)
         }
-        .frame(height: 280)
-        .padding(12)
-        .background(theme.surface.opacity(0.96))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(theme.accent.opacity(0.18), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private func position(forIndex index: Int, size: CGSize) -> CGPoint {
-        guard index < audioManager.bandFrequencies.count,
-              index < audioManager.bandGains.count else { return .zero }
-        return CGPoint(
-            x: xPosition(for: audioManager.bandFrequencies[index], width: size.width),
-            y: yPosition(for: audioManager.bandGains[index], height: size.height)
-        )
-    }
-
-    private func xPosition(for frequency: Float, width: CGFloat) -> CGFloat {
-        let logMin = log10(minFreq)
-        let logMax = log10(maxFreq)
-        let logFrequency = log10(min(max(frequency, minFreq), maxFreq))
-        return CGFloat((logFrequency - logMin) / (logMax - logMin)) * width
-    }
-
-    private func yPosition(for gain: Float, height: CGFloat) -> CGFloat {
-        let ratio = (gain - minGain) / (maxGain - minGain)
-        return height * CGFloat(1 - ratio)
-    }
-
-    private func gain(forY y: CGFloat, height: CGFloat) -> Float {
-        let ratio = 1 - Float(y / max(height, 1))
-        return min(max(ratio * (maxGain - minGain) + minGain, minGain), maxGain)
-    }
-
-    private func equalizerPath(size: CGSize) -> Path {
-        smoothPath(points: (0..<audioManager.bandFrequencies.count).map { position(forIndex: $0, size: size) })
-    }
-
-    private func equalizerFillPath(size: CGSize) -> Path {
-        var path = equalizerPath(size: size)
-        path.addLine(to: CGPoint(x: size.width, y: size.height))
-        path.addLine(to: CGPoint(x: 0, y: size.height))
-        path.closeSubpath()
-        return path
-    }
-
-    private func seaSpectrumPath(size: CGSize) -> Path {
-        let levels = smoothedSpectrumLevels(audioManager.spectrumLevels)
-        guard !levels.isEmpty else { return Path() }
-        let points = levels.enumerated().map { index, level in
-            let x = size.width * CGFloat(index) / CGFloat(max(levels.count - 1, 1))
-            let normalized = CGFloat(min(max(level, 0), 1))
-            let swell = sin(CGFloat(index) * 0.38) * 5
-            let y = size.height - max(size.height * normalized * 0.78 + swell, 3)
-            return CGPoint(x: x, y: y)
-        }
-
-        var path = smoothPath(points: points)
-        path.addLine(to: CGPoint(x: size.width, y: size.height))
-        path.addLine(to: CGPoint(x: 0, y: size.height))
-        path.closeSubpath()
-        return path
-    }
-
-    private func smoothedSpectrumLevels(_ levels: [Float]) -> [Float] {
-        guard !levels.isEmpty else { return [] }
-        let targetCount = 64
-        return (0..<targetCount).map { outputIndex in
-            let sourcePosition = Float(outputIndex) * Float(levels.count - 1) / Float(max(targetCount - 1, 1))
-            let center = Int(sourcePosition.rounded())
-            let range = max(center - 2, 0)...min(center + 2, levels.count - 1)
-            let weightedSum = range.reduce(Float(0)) { partial, index in
-                let distance = abs(Float(index) - sourcePosition)
-                let weight = max(0, 1 - distance / 3)
-                return partial + levels[index] * weight
-            }
-            let weightSum = range.reduce(Float(0)) { partial, index in
-                let distance = abs(Float(index) - sourcePosition)
-                return partial + max(0, 1 - distance / 3)
-            }
-            return weightSum > 0 ? weightedSum / weightSum : 0
-        }
-    }
-
-    private func smoothPath(points: [CGPoint]) -> Path {
         var path = Path()
         guard let first = points.first else { return path }
         path.move(to: first)
-        guard points.count > 1 else { return path }
-
         for index in 1..<points.count {
-            let previous = points[index - 1]
-            let current = points[index]
-            let midX = (previous.x + current.x) / 2
-            path.addCurve(
-                to: current,
-                control1: CGPoint(x: midX, y: previous.y),
-                control2: CGPoint(x: midX, y: current.y)
-            )
+            let previous = points[index - 1], next = points[index], middle = (previous.x + next.x) / 2
+            path.addCurve(to: next, control1: CGPoint(x: middle, y: previous.y), control2: CGPoint(x: middle, y: next.y))
+        }
+        if fill {
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY)); path.closeSubpath()
         }
         return path
-    }
-
-    private func zeroLine(size: CGSize) -> some View {
-        Path { path in
-            let zeroY = yPosition(for: 0, height: size.height)
-            path.move(to: CGPoint(x: 0, y: zeroY))
-            path.addLine(to: CGPoint(x: size.width, y: zeroY))
-        }
-        .stroke(Color.secondary.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
     }
 }

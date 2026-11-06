@@ -2,29 +2,14 @@ import AVFoundation
 
 @MainActor
 final class SurroundPlugin: AudioEffectPlugin {
-    let displayName = "Surround"
-    let reverbNode = AVAudioUnitReverb()
-
-    var node: AVAudioNode { reverbNode }
-
-    var isEnabled: Bool = false {
-        didSet {
-            applyState()
-        }
-    }
-
-    var amount: Float = 0.55 {
-        didSet {
-            applyState()
-        }
-    }
+    let displayName = "Stereo Surround"
+    private let processor = RealtimeDSPNode(.surround)
+    var node: AVAudioNode { processor.node }
+    var isEnabled = false { didSet { processor.enable(isEnabled) } }
+    var amount: Float = 0.55 { didSet { processor.set(1, amount) } }
 
     init() {
-        reverbNode.loadFactoryPreset(.largeHall)
-        reverbNode.wetDryMix = 0
-    }
-
-    private func applyState() {
-        reverbNode.wetDryMix = isEnabled ? min(max(amount * 55, 0), 55) : 0
+        processor.set(1, amount)
+        processor.enable(isEnabled)
     }
 }

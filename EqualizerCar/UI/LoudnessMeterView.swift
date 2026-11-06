@@ -36,13 +36,13 @@ struct LoudnessMeterView: View {
                 .stroke(audioManager.clippingRisk > 0.72 ? theme.accent.opacity(0.55) : theme.accent.opacity(0.18), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .shadow(color: Color.black.opacity(0.42), radius: 16, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(theme.isDark ? 0 : 0.03), radius: 4, x: 0, y: 2)
     }
 
     private func meterRow(title: String, value: Float, text: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(theme.mutedInk)
                 Spacer()
@@ -53,7 +53,7 @@ struct LoudnessMeterView: View {
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.black.opacity(0.04))
+                    Capsule().fill(theme.surface)
                     Capsule()
                         .fill(color)
                         .frame(width: geometry.size.width * CGFloat(min(max(value, 0), 1)))
@@ -65,7 +65,7 @@ struct LoudnessMeterView: View {
 
     private func metricTile(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title.uppercased())
+            Text(LocalizedStringKey(title))
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(theme.mutedInk)
                 .lineLimit(1)
@@ -78,18 +78,18 @@ struct LoudnessMeterView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.black.opacity(0.04))
+        .background(theme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var riskText: String {
         switch audioManager.clippingRisk {
         case 0..<0.35:
-            return "LOW"
+            return "НИЗКИЙ"
         case 0.35..<0.72:
-            return "WATCH"
+            return "ВНИМАНИЕ"
         default:
-            return "HIGH"
+            return "ВЫСОКИЙ"
         }
     }
 
